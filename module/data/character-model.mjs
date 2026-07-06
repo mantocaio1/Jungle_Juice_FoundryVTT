@@ -69,29 +69,29 @@ export class CharacterModel extends foundry.abstract.TypeDataModel {
 
       abilities: new ArrayField(
         new SchemaField({
-          name: new StringField({ required: true, blank: true, initial: "" }),
+          name: new StringField({ required: false, blank: true, initial: "" }),
           type: new StringField({
-            required: true,
+            required: false,
             blank: false,
             initial: "passiva",
             choices: ["passiva", "ativa_l", "ativa_f", "especial"],
           }),
-          desc: new StringField({ required: true, blank: true, initial: "" }),
-          weakness: new StringField({ required: true, blank: true, initial: "" }),
-          damage: new StringField({ required: true, blank: true, initial: "" }),
+          desc: new StringField({ required: false, blank: true, initial: "" }),
+          weakness: new StringField({ required: false, blank: true, initial: "" }),
+          damage: new StringField({ required: false, blank: true, initial: "" }),
         })
       ),
 
       items: new ArrayField(
         new SchemaField({
-          name: new StringField({ required: true, blank: true, initial: "" }),
+          name: new StringField({ required: false, blank: true, initial: "" }),
           tier: new StringField({
-            required: true,
+            required: false,
             blank: false,
             initial: "1",
             choices: ["1", "2", "3"],
           }),
-          desc: new StringField({ required: true, blank: true, initial: "" }),
+          desc: new StringField({ required: false, blank: true, initial: "" }),
         }),
         { initial: [{ ...EMPTY_ITEM }, { ...EMPTY_ITEM }] }
       ),

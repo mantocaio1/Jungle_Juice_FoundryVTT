@@ -6,7 +6,7 @@ import {
   MAX_ATTRIBUTE_AT_CREATION,
   MAX_ABILITIES,
 } from "../config.mjs";
-import { rollTest, rollAttack, rollInitiative, rollDyingSave } from "../dice.mjs";
+import { rollTest, rollAttack, rollInitiative, rollDyingSave, useAbility } from "../dice.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -28,6 +28,7 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       adjustInsanity: JungleJuiceActorSheet.#onAdjustInsanity,
       addAbility: JungleJuiceActorSheet.#onAddAbility,
       removeAbility: JungleJuiceActorSheet.#onRemoveAbility,
+      useAbility: JungleJuiceActorSheet.#onUseAbility,
     },
   };
 
@@ -93,6 +94,44 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     this.element.querySelectorAll(".sheet-tabs [data-tab]").forEach((tab) => {
       tab.classList.toggle("active", tab.dataset.tab === this.tabGroups.primary);
     });
+
+    // ArrayFields (habilidades/itens) são atualizados por completo, fora do
+    // submit automático, para evitar diffs parciais inválidos do AppV2.
+    // stopPropagation impede que o change suba para o handler de submit do
+    // AppV2 e cause uma corrida de re-render + submit de form defasado.
+    this.element.querySelectorAll(".ability-card [data-ab-field]").forEach((el) => {
+      el.addEventListener("change", (event) => {
+        event.stopPropagation();
+        this.actor.update({ "system.abilities": this.#collectAbilities() });
+      });
+    });
+
+    this.element.querySelectorAll(".item-card [data-it-field]").forEach((el) => {
+      el.addEventListener("change", (event) => {
+        event.stopPropagation();
+        this.actor.update({ "system.items": this.#collectItems() });
+      });
+    });
+  }
+
+  /** @returns {object[]} */
+  #collectAbilities() {
+    return Array.from(this.element.querySelectorAll(".ability-card")).map((card) => ({
+      name: card.querySelector('[data-ab-field="name"]')?.value ?? "",
+      type: card.querySelector('[data-ab-field="type"]')?.value ?? "passiva",
+      desc: card.querySelector('[data-ab-field="desc"]')?.value ?? "",
+      weakness: card.querySelector('[data-ab-field="weakness"]')?.value ?? "",
+      damage: card.querySelector('[data-ab-field="damage"]')?.value ?? "",
+    }));
+  }
+
+  /** @returns {object[]} */
+  #collectItems() {
+    return Array.from(this.element.querySelectorAll(".item-card")).map((card) => ({
+      name: card.querySelector('[data-it-field="name"]')?.value ?? "",
+      tier: card.querySelector('[data-it-field="tier"]')?.value ?? "1",
+      desc: card.querySelector('[data-it-field="desc"]')?.value ?? "",
+    }));
   }
 
   /** @param {PointerEvent} event */
@@ -126,9 +165,70 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
   /** @param {PointerEvent} event */
   static async #onRollAttack(event, target) {
     const sheet = this;
-    const attrKey = target.dataset.attr;
-    const ac = Number(prompt("AC do alvo:", "12") ?? 12);
+    const presetAttr = target.dataset.attr;
+    const abilities = sheet.actor.system.abilities ?? [];
+
+    const attrOptions = Object.entries(ATTRIBUTES)
+      .map(
+        ([key, info]) =>
+          `<option value="${key}" ${key === presetAttr ? "selected" : ""}>${info.abbr} — ${info.label}</option>`
+      )
+      .join("");
+
+    const abilityOptions = abilities
+      .map((ab, i) => {
+        const type = ABILITY_TYPES[ab.type] ?? ABILITY_TYPES.passiva;
+        const cost = type.insanity ? ` · +${type.insanity} ins` : "";
+        const dmg = ab.damage?.trim() ? ` · ${ab.damage.trim()}` : "";
+        return `<option value="${i}">${ab.name?.trim() || "Sem nome"} (${type.label}${cost}${dmg})</option>`;
+      })
+      .join("");
+
+    const content = `
+      <div class="jj-attack-dialog">
+        <div class="form-group">
+          <label>Atributo do ataque</label>
+          <select name="attr">${attrOptions}</select>
+        </div>
+        <div class="form-group">
+          <label>AC do alvo</label>
+          <input type="number" name="ac" value="12"/>
+        </div>
+        <div class="form-group">
+          <label>Usar habilidade do Complex?</label>
+          <select name="ability">
+            <option value="-1">Nenhuma (ataque comum)</option>
+            ${abilityOptions}
+          </select>
+        </div>
+      </div>`;
+
+    const data = await foundry.applications.api.DialogV2.wait({
+      window: { title: "Atacar" },
+      content,
+      buttons: [
+        {
+          action: "attack",
+          label: "Atacar",
+          default: true,
+          callback: (ev, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
+        },
+        { action: "cancel", label: "Cancelar", callback: () => null },
+      ],
+      rejectClose: false,
+    });
+
+    if (!data) return;
+
+    const attrKey = data.attr ?? presetAttr;
+    const ac = Number(data.ac ?? 12);
+    const abilityIndex = Number(data.ability ?? -1);
+
     await rollAttack({ actor: sheet.actor, attrKey, ac });
+
+    if (abilityIndex >= 0) {
+      await useAbility({ actor: sheet.actor, index: abilityIndex });
+    }
   }
 
   /** @param {PointerEvent} event */
@@ -163,5 +263,11 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     const abilities = [...(this.actor.system.abilities ?? [])];
     abilities.splice(index, 1);
     await this.actor.update({ "system.abilities": abilities });
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onUseAbility(event, target) {
+    const index = Number(target.dataset.index);
+    await useAbility({ actor: this.actor, index });
   }
 }
