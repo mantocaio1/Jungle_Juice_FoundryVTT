@@ -2,9 +2,12 @@ import { SYSTEM_ID } from "./module/config.mjs";
 import { CharacterModel, NpcModel } from "./module/data/character-model.mjs";
 import { JungleJuiceActor } from "./module/documents.mjs";
 import { JungleJuiceActorSheet } from "./module/applications/actor-sheet.mjs";
+import { registerHandlebarsHelpers } from "./module/helpers.mjs";
 
 Hooks.once("init", () => {
   console.log(`${SYSTEM_ID} | Inicializando sistema Jungle Juice RPG`);
+
+  registerHandlebarsHelpers();
 
   CONFIG.Actor.documentClass = JungleJuiceActor;
   CONFIG.Actor.dataModels.character = CharacterModel;
@@ -16,7 +19,7 @@ Hooks.once("init", () => {
       value: [],
     },
     npc: {
-      bar: ["hp"],
+      bar: ["hp", "insanity"],
       value: [],
     },
   };

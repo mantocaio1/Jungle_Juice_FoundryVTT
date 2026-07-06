@@ -17,6 +17,12 @@
   padding: 0;
 }
 
+.jungle-juice.sheet.actor .sheet-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
 .jungle-juice.sheet.actor input,
 .jungle-juice.sheet.actor select,
 .jungle-juice.sheet.actor textarea {

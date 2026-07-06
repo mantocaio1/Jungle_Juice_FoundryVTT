@@ -132,40 +132,6 @@ export class CharacterModel extends foundry.abstract.TypeDataModel {
   }
 }
 
-export class NpcModel extends foundry.abstract.TypeDataModel {
-  static defineSchema() {
-    return {
-      insect: new StringField({ required: true, blank: true, initial: "" }),
-      notes: new HTMLField({ required: true, blank: true, initial: "" }),
-      attributes: new SchemaField({
-        for: attributeField(),
-        agi: attributeField(),
-        res: attributeField(),
-        men: attributeField(),
-        per: attributeField(),
-        pre: attributeField(),
-        int: attributeField(),
-      }),
-      hp: new SchemaField({
-        value: new NumberField({ required: true, integer: true, initial: 10 }),
-        max: new NumberField({ required: true, integer: true, initial: 10 }),
-      }),
-      ac: new SchemaField({
-        value: new NumberField({ required: true, integer: true, initial: 8 }),
-      }),
-      insanity: new SchemaField({
-        value: new NumberField({ required: true, integer: true, min: 0, max: 100, initial: 0 }),
-        max: new NumberField({ required: true, integer: true, initial: 100 }),
-      }),
-      dying: new BooleanField({ required: true, initial: false }),
-    };
-  }
-
-  /** @inheritDoc */
-  prepareDerivedData() {
-    const attrs = this.attributes;
-    this.hp.max = 10 + attrs.res * 2;
-    this.hp.value = Math.min(this.hp.value, this.hp.max);
-    this.ac.value = 8 + attrs.agi;
-  }
-}
+// NPCs usam exatamente o mesmo modelo dos personagens, para que o Mestre
+// possa criar fichas completas de NPC in-game com atributos, Complex e itens.
+export class NpcModel extends CharacterModel {}

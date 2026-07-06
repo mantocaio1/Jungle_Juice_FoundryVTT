@@ -28,7 +28,9 @@
       "character": {
         "htmlFields": ["origin", "motivation"]
       },
-      "npc": {}
+      "npc": {
+        "htmlFields": ["origin", "motivation"]
+      }
     }
   },
   "socket": false,

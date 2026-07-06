@@ -104,7 +104,10 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     const next = current + delta;
 
     if (next < 0 || next > MAX_ATTRIBUTE_AT_CREATION) return;
-    if (delta > 0 && sheet.actor.system.points.remaining <= 0) {
+
+    // Apenas personagens têm orçamento de pontos; NPCs não são limitados.
+    const points = sheet.actor.system.points;
+    if (delta > 0 && points && points.remaining <= 0) {
       ui.notifications.warn("Sem pontos de atributo restantes.");
       return;
     }
