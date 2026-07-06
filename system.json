@@ -1,0 +1,45 @@
+{
+  "id": "jungle-juice",
+  "title": "Jungle Juice RPG",
+  "description": "Sistema de mesa para Jungle Juice RPG — horror, suspense e Insecta Complex. Compatível com Foundry VTT v14.364.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14.364"
+  },
+  "authors": [
+    {
+      "name": "mantocaio1",
+      "email": "mantocaio1@gmail.com",
+      "url": "https://github.com/mantocaio1/jungle_juice_foundryvtt"
+    }
+  ],
+  "esmodules": ["jungle-juice.mjs"],
+  "styles": ["styles/jungle-juice.css"],
+  "languages": [
+    {
+      "lang": "pt-BR",
+      "name": "Português (Brasil)",
+      "path": "lang/pt-BR.json"
+    }
+  ],
+  "documentTypes": {
+    "Actor": {
+      "character": {
+        "htmlFields": ["origin", "motivation"]
+      },
+      "npc": {}
+    }
+  },
+  "socket": false,
+  "initiative": "1d20 + @attributes.agi",
+  "grid": {
+    "distance": 1.5,
+    "units": "m"
+  },
+  "primaryTokenAttribute": "hp",
+  "secondaryTokenAttribute": "insanity",
+  "url": "https://github.com/mantocaio1/jungle_juice_foundryvtt",
+  "manifest": "https://raw.githubusercontent.com/mantocaio1/jungle_juice_foundryvtt/main/system.json",
+  "download": "https://github.com/mantocaio1/jungle_juice_foundryvtt/archive/refs/heads/main.zip"
+}

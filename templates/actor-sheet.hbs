@@ -1,0 +1,148 @@
+<header class="sheet-header">
+  <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" alt="{{actor.name}}"/>
+  <div class="header-fields">
+    <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Nome"/></h1>
+    <div class="resource-row">
+      <div class="resource hp">
+        <label>HP</label>
+        <div class="resource-content">
+          <input type="number" name="system.hp.value" value="{{system.hp.value}}"/>
+          <span>/</span>
+          <span class="derived">{{system.hp.max}}</span>
+        </div>
+      </div>
+      <div class="resource ac">
+        <label>AC</label>
+        <span class="derived">{{system.ac.value}}</span>
+      </div>
+      <div class="resource insanity">
+        <label>Insanidade</label>
+        <div class="resource-content">
+          <button type="button" data-action="adjustInsanity" data-delta="-5">−</button>
+          <input type="number" name="system.insanity.value" value="{{system.insanity.value}}" min="0" max="100"/>
+          <button type="button" data-action="adjustInsanity" data-delta="5">+</button>
+          <span class="insanity-label" style="color: {{system.insanityColor}}">{{system.insanityLabel}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="sheet-tabs tabs" data-group="primary">
+  {{#each tabs as |tab|}}
+  <a class="item {{#if (eq tab.id ../activeTab)}}active{{/if}}" data-tab="{{tab.id}}">{{tab.label}}</a>
+  {{/each}}
+</nav>
+
+<section class="sheet-body">
+  <div class="tab identity" data-group="primary" data-tab="identity" {{#unless (eq activeTab "identity")}}hidden{{/unless}}>
+    <div class="grid-2">
+      <div class="field">
+        <label>Inseto do Complex</label>
+        <input type="text" name="system.insect" value="{{system.insect}}" placeholder="Libélula, Escorpião..."/>
+      </div>
+      <div class="field">
+        <label>Facção</label>
+        <input type="text" name="system.faction" value="{{system.faction}}"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Origem / Background</label>
+      {{editor system.origin target="system.origin" engine="prosemirror" button=true editable=editable}}
+    </div>
+    <div class="field">
+      <label>Motivação</label>
+      {{editor system.motivation target="system.motivation" engine="prosemirror" button=true editable=editable}}
+    </div>
+  </div>
+
+  <div class="tab attributes" data-group="primary" data-tab="attributes" {{#unless (eq activeTab "attributes")}}hidden{{/unless}}>
+    <div class="points-badge">
+      Pontos: <strong>{{system.points.spent}}</strong> / {{config.attributePoints}}
+      <span class="hint">(restantes: {{system.points.remaining}} · máx {{config.maxAttribute}} por atributo)</span>
+    </div>
+    <div class="attr-grid">
+      {{#each config.attributes as |attr key|}}
+      <div class="attr-card">
+        <div class="attr-header">
+          <span>{{attr.emoji}} {{attr.abbr}}</span>
+          <div class="attr-controls">
+            <button type="button" data-action="adjustAttr" data-attr="{{key}}" data-delta="-1">−</button>
+            <span class="attr-value">{{lookup ../system.attributes key}}</span>
+            <button type="button" data-action="adjustAttr" data-attr="{{key}}" data-delta="1">+</button>
+          </div>
+        </div>
+        <div class="attr-label">{{attr.label}}</div>
+      </div>
+      {{/each}}
+    </div>
+    <div class="derived-row">
+      <div class="derived-card hp">❤️ HP <strong>{{system.hp.max}}</strong> <small>10 + RES×2</small></div>
+      <div class="derived-card ac">🛡️ AC <strong>{{system.ac.value}}</strong> <small>8 + AGI</small></div>
+    </div>
+  </div>
+
+  <div class="tab complex" data-group="primary" data-tab="complex" {{#unless (eq activeTab "complex")}}hidden{{/unless}}>
+    <div class="points-badge">
+      Complex: <strong>{{abilityPointsRemaining}}</strong> / {{abilityPointsTotal}} pts
+      <span class="hint">Fraquezas extras (+1 pt, máx 2):</span>
+      <input type="number" name="system.extraWeaknesses" value="{{system.extraWeaknesses}}" min="0" max="2"/>
+    </div>
+    {{#each system.abilities as |ability index|}}
+    <div class="ability-card">
+      <div class="ability-header">
+        <input type="text" name="system.abilities.{{index}}.name" value="{{ability.name}}" placeholder="Nome da habilidade"/>
+        <select name="system.abilities.{{index}}.type">
+          {{#each config.abilityTypes as |type typeKey|}}
+          <option value="{{typeKey}}" {{#if (eq ability.type typeKey)}}selected{{/if}}>{{type.label}} ({{type.cost}}pt)</option>
+          {{/each}}
+        </select>
+        <button type="button" data-action="removeAbility" data-index="{{index}}">✕</button>
+      </div>
+      <input type="text" name="system.abilities.{{index}}.desc" value="{{ability.desc}}" placeholder="Descrição"/>
+      <input type="text" name="system.abilities.{{index}}.weakness" value="{{ability.weakness}}" placeholder="Fraqueza obrigatória"/>
+      <input type="text" name="system.abilities.{{index}}.damage" value="{{ability.damage}}" placeholder="Dado de dano (ex: 1d6)"/>
+    </div>
+    {{/each}}
+    <button type="button" class="btn-add" data-action="addAbility">+ Adicionar Habilidade</button>
+  </div>
+
+  <div class="tab items" data-group="primary" data-tab="items" {{#unless (eq activeTab "items")}}hidden{{/unless}}>
+    {{#each system.items as |item index|}}
+    <div class="item-card">
+      <div class="item-slot">SLOT {{add index 1}}</div>
+      <div class="item-row">
+        <input type="text" name="system.items.{{index}}.name" value="{{item.name}}" placeholder="Nome do item"/>
+        <select name="system.items.{{index}}.tier">
+          {{#each config.itemTiers as |tier tierKey|}}
+          <option value="{{tierKey}}" {{#if (eq item.tier tierKey)}}selected{{/if}}>Tier {{tierKey}} — {{tier.label}} ({{tier.bonus}})</option>
+          {{/each}}
+        </select>
+      </div>
+      <input type="text" name="system.items.{{index}}.desc" value="{{item.desc}}" placeholder="Como se relaciona com o Complex?"/>
+    </div>
+    {{/each}}
+  </div>
+
+  <div class="tab rolls" data-group="primary" data-tab="rolls" {{#unless (eq activeTab "rolls")}}hidden{{/unless}}>
+    <h3>Testes (D20 + Atributo vs CD)</h3>
+    <div class="roll-grid">
+      {{#each config.attributes as |attr key|}}
+      <button type="button" data-action="rollTest" data-attr="{{key}}" data-cd="12">{{attr.abbr}} CD 12</button>
+      {{/each}}
+    </div>
+    <h3>Ataques (D20 + Atributo vs AC)</h3>
+    <div class="roll-grid">
+      <button type="button" data-action="rollAttack" data-attr="for">Melee (FOR)</button>
+      <button type="button" data-action="rollAttack" data-attr="pre">Distância (PRE)</button>
+      <button type="button" data-action="rollAttack" data-attr="agi">Furtivo (AGI)</button>
+    </div>
+    <h3>Combate</h3>
+    <div class="roll-grid">
+      <button type="button" data-action="rollInit">Iniciativa (D20 + AGI)</button>
+      {{#if system.dying}}
+      <button type="button" data-action="rollDying" class="danger">Rolar Sobrevivência (Morrendo)</button>
+      {{/if}}
+    </div>
+  </div>
+</section>

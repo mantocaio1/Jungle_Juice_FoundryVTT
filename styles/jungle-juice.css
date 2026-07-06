@@ -1,0 +1,268 @@
+.jungle-juice.sheet.actor {
+  --jj-bg: #080e0a;
+  --jj-surface: #0c1610;
+  --jj-border: #1a2e1e;
+  --jj-accent: #4CAF70;
+  --jj-text: #c0d0b8;
+  --jj-muted: #2a4a30;
+  --jj-hp: #F44336;
+  --jj-ac: #2196F3;
+  font-family: "Courier New", monospace;
+  color: var(--jj-text);
+  background: var(--jj-bg);
+}
+
+.jungle-juice.sheet.actor .window-content {
+  background: var(--jj-bg);
+  padding: 0;
+}
+
+.jungle-juice.sheet.actor input,
+.jungle-juice.sheet.actor select,
+.jungle-juice.sheet.actor textarea {
+  background: #060c08;
+  border: 1px solid var(--jj-border);
+  border-radius: 5px;
+  color: var(--jj-text);
+  font-family: inherit;
+}
+
+.jungle-juice.sheet.actor .sheet-header {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--jj-border);
+}
+
+.jungle-juice.sheet.actor .profile-img {
+  width: 72px;
+  height: 72px;
+  border: 1px solid var(--jj-border);
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.jungle-juice.sheet.actor .header-fields {
+  flex: 1;
+}
+
+.jungle-juice.sheet.actor .charname input {
+  width: 100%;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--jj-accent);
+  background: transparent;
+  border: none;
+}
+
+.jungle-juice.sheet.actor .resource-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.jungle-juice.sheet.actor .resource {
+  background: var(--jj-surface);
+  border: 1px solid var(--jj-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.jungle-juice.sheet.actor .resource label {
+  display: block;
+  font-size: 10px;
+  color: var(--jj-muted);
+  text-transform: uppercase;
+}
+
+.jungle-juice.sheet.actor .resource-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jungle-juice.sheet.actor .resource input[type="number"] {
+  width: 48px;
+}
+
+.jungle-juice.sheet.actor .derived {
+  font-weight: bold;
+}
+
+.jungle-juice.sheet.actor .sheet-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid var(--jj-border);
+}
+
+.jungle-juice.sheet.actor .sheet-tabs .item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  border: 1px solid var(--jj-border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  color: var(--jj-muted);
+  cursor: pointer;
+}
+
+.jungle-juice.sheet.actor .sheet-tabs .item.active {
+  background: var(--jj-surface);
+  color: var(--jj-accent);
+  border-color: var(--jj-accent);
+}
+
+.jungle-juice.sheet.actor .sheet-body {
+  padding: 14px;
+}
+
+.jungle-juice.sheet.actor .tab {
+  display: block;
+}
+
+.jungle-juice.sheet.actor .grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.jungle-juice.sheet.actor .field {
+  margin-bottom: 12px;
+}
+
+.jungle-juice.sheet.actor .field label {
+  display: block;
+  font-size: 10px;
+  color: var(--jj-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.jungle-juice.sheet.actor .points-badge {
+  padding: 8px 12px;
+  border: 1px solid var(--jj-accent);
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
+.jungle-juice.sheet.actor .hint {
+  color: var(--jj-muted);
+  font-size: 11px;
+  margin-left: 8px;
+}
+
+.jungle-juice.sheet.actor .attr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.jungle-juice.sheet.actor .attr-card {
+  background: var(--jj-surface);
+  border: 1px solid var(--jj-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.jungle-juice.sheet.actor .attr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.jungle-juice.sheet.actor .attr-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jungle-juice.sheet.actor .attr-controls button {
+  background: var(--jj-border);
+  border: 1px solid #2a4a30;
+  color: var(--jj-accent);
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.jungle-juice.sheet.actor .attr-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+  min-width: 24px;
+  text-align: center;
+}
+
+.jungle-juice.sheet.actor .attr-label {
+  font-size: 11px;
+  color: var(--jj-muted);
+}
+
+.jungle-juice.sheet.actor .derived-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.jungle-juice.sheet.actor .derived-card {
+  flex: 1;
+  background: var(--jj-surface);
+  border: 1px solid var(--jj-border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.jungle-juice.sheet.actor .ability-card,
+.jungle-juice.sheet.actor .item-card {
+  background: var(--jj-surface);
+  border: 1px solid var(--jj-border);
+  border-left: 3px solid var(--jj-accent);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.jungle-juice.sheet.actor .ability-header,
+.jungle-juice.sheet.actor .item-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.jungle-juice.sheet.actor .ability-header input,
+.jungle-juice.sheet.actor .item-row input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.jungle-juice.sheet.actor .btn-add,
+.jungle-juice.sheet.actor .roll-grid button {
+  background: var(--jj-border);
+  border: 1px solid var(--jj-accent);
+  color: var(--jj-accent);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.jungle-juice.sheet.actor .roll-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.jungle-juice.sheet.actor .roll-grid button.danger {
+  border-color: var(--jj-hp);
+  color: var(--jj-hp);
+}
+
+.jungle-juice.sheet.actor h3 {
+  color: var(--jj-accent);
+  font-size: 13px;
+  margin: 12px 0 8px;
+}
