@@ -148,8 +148,10 @@
       <button type="button" data-action="rollInit">Iniciativa (D20 + AGI)</button>
       {{#if system.dying}}
       <button type="button" data-action="rollDying" class="danger">Rolar Sobrevivência (Morrendo)</button>
+      <button type="button" data-action="stabilizeDying">🩹 Estabilizar (RES CD 12)</button>
       {{/if}}
     </div>
+    <p class="hint">Cura com 💊 em 0 HP estabiliza em pelo menos 1 HP e remove Morrendo.</p>
 
     <h3>Cura &amp; Descanso</h3>
     <div class="roll-grid">
@@ -161,9 +163,16 @@
     <h3>Condições</h3>
     <div class="conditions-grid">
       {{#each conditions as |cond|}}
-      <button type="button" class="condition-toggle {{#if cond.active}}active{{/if}}" data-action="toggleCondition" data-condition="{{cond.id}}" title="{{cond.hint}}">
-        {{cond.name}}
-      </button>
+      <div class="condition-row">
+        <button type="button" class="condition-toggle {{#if cond.active}}active{{/if}}" data-action="toggleCondition" data-condition="{{cond.id}}" title="{{cond.hint}}">
+          {{cond.name}}
+        </button>
+        {{#if cond.showRecover}}
+        <button type="button" class="condition-recover" data-action="recoverCondition" data-condition="{{cond.id}}" title="Teste {{cond.recoveryLabel}} para remover">
+          ↻ {{cond.recoveryLabel}}
+        </button>
+        {{/if}}
+      </div>
       {{/each}}
     </div>
 

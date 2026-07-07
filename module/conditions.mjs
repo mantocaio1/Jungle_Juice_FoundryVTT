@@ -1,4 +1,5 @@
 import { CONDITIONS, getCondition, RUNAWAY_STATUS_ID } from "./config.mjs";
+import { rollTest } from "./dice.mjs";
 
 /** Registra as condições do sistema como status effects do Foundry. */
 export function registerConditions() {
@@ -62,4 +63,44 @@ export async function toggleCondition(actor, conditionId) {
   const condition = getCondition(conditionId);
   if (!condition) return;
   await actor.toggleStatusEffect(conditionId);
+}
+
+/**
+ * Teste de recuperação para remover uma condição ativa (Parte 4).
+ * @param {Actor} actor
+ * @param {string} conditionId
+ */
+export async function tryRecoverCondition(actor, conditionId) {
+  const condition = getCondition(conditionId);
+  if (!condition?.recovery) {
+    ui.notifications.warn("Esta condição não possui teste de recuperação automática.");
+    return;
+  }
+  if (!actor.statuses?.has(conditionId)) {
+    ui.notifications.warn(`${condition.name} não está ativo.`);
+    return;
+  }
+
+  const { attr, dc } = condition.recovery;
+  const { success, total } = await rollTest({
+    actor,
+    attrKey: attr,
+    target: dc,
+    label: `Recuperar — ${condition.name}`,
+  });
+
+  if (success) {
+    await actor.toggleStatusEffect(conditionId, { active: false });
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      content: `<div class="jungle-juice-card"><p>✅ <strong>${condition.name}</strong> removido.</p></div>`,
+    });
+  } else {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      content: `<div class="jungle-juice-card"><p>❌ Falhou em sair de <strong>${condition.name}</strong> (${total} vs CD ${dc}).</p></div>`,
+    });
+  }
+
+  return { success };
 }

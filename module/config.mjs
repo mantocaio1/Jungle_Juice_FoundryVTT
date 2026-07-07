@@ -72,6 +72,10 @@ export const FACTION_NAMES = [
   "Blackmoth",
 ];
 
+/** CD para teste de estabilização (Morrendo → 1 HP). */
+export const STABILIZE_DC = 12;
+export const STABILIZE_ATTR = "res";
+
 export const PHYSICAL_ATTRS = ["for", "agi", "res", "pre"];
 export const MENTAL_ATTRS = ["men", "per"];
 
@@ -89,7 +93,8 @@ export const CONDITIONS = [
     disadvantage: "all",
     perTurnHp: null,
     perTurnInsanity: 0,
-    hint: "Desvantagem em todos os testes. Perde a Ação Livre.",
+    recovery: { attr: "res", dc: 12 },
+    hint: "Desvantagem em todos os testes. Perde a Ação Livre. RES CD 12 para recuperar.",
   },
   {
     id: "poisoned",
@@ -98,7 +103,8 @@ export const CONDITIONS = [
     disadvantage: "physical",
     perTurnHp: "1d4",
     perTurnInsanity: 0,
-    hint: "Desvantagem em testes físicos. Perde 1d4 HP por turno.",
+    recovery: { attr: "res", dc: 12 },
+    hint: "Desvantagem em testes físicos. Perde 1d4 HP por turno. RES CD 12 para tratar.",
   },
   {
     id: "immobilized",
@@ -107,7 +113,8 @@ export const CONDITIONS = [
     disadvantage: null,
     perTurnHp: null,
     perTurnInsanity: 0,
-    hint: "Não pode usar Suporte/Movimentação.",
+    recovery: { attr: "agi", dc: 12 },
+    hint: "Não pode usar Suporte/Movimentação. AGI CD 12 para se soltar.",
   },
   {
     id: "bleeding",
@@ -116,7 +123,8 @@ export const CONDITIONS = [
     disadvantage: null,
     perTurnHp: "1d4",
     perTurnInsanity: 0,
-    hint: "Perde 1d4 HP no início de cada turno.",
+    recovery: { attr: "res", dc: 12 },
+    hint: "Perde 1d4 HP no início de cada turno. RES CD 12 para estancar.",
   },
   {
     id: "hallucinating",
@@ -125,7 +133,8 @@ export const CONDITIONS = [
     disadvantage: "mental",
     perTurnHp: null,
     perTurnInsanity: 5,
-    hint: "Desvantagem em Mente e Percepção. +5 Insanidade por turno.",
+    recovery: { attr: "men", dc: 14 },
+    hint: "Desvantagem em Mente e Percepção. +5 Insanidade por turno. MEN CD 14 para recuperar.",
   },
   {
     id: "blinded",
@@ -152,7 +161,8 @@ export const CONDITIONS = [
     disadvantage: null,
     perTurnHp: "1d6",
     perTurnInsanity: 0,
-    hint: "1d6 de dano por turno. CD 12 de Agilidade para apagar.",
+    recovery: { attr: "agi", dc: 12 },
+    hint: "1d6 de dano por turno. AGI CD 12 para apagar.",
   },
 ];
 

@@ -1,37 +1,12 @@
 /** Entradas de compêndio — NPCs pré-prontos para o Mestre. */
 
-const EMPTY_ITEMS = [
-  { name: "", tier: "1", desc: "" },
-  { name: "", tier: "1", desc: "" },
-];
-
-/** Monta o bloco system padrão de um NPC a partir de atributos e extras. */
-function npcSystem(attrs, extras = {}) {
-  const hpMax = 10 + attrs.res * 2;
-  const spent = Object.values(attrs).reduce((s, v) => s + v, 0);
-  return {
-    insect: extras.insect ?? "",
-    origin: extras.origin ?? "",
-    motivation: extras.motivation ?? "",
-    faction: extras.faction ?? "NEST",
-    attributes: attrs,
-    points: { total: 21, spent, remaining: Math.max(0, 21 - spent) },
-    hp: { value: extras.hp ?? hpMax, max: hpMax },
-    ac: { value: 8 + attrs.agi },
-    insanity: { value: extras.insanity ?? 0, max: 100 },
-    extraWeaknesses: extras.extraWeaknesses ?? 0,
-    abilities: extras.abilities ?? [],
-    items: extras.items ?? EMPTY_ITEMS,
-    dying: false,
-    runaway: extras.runaway ?? { unlocked: false, active: false },
-  };
-}
+import { buildNpcSystem } from "./npc-builder.mjs";
 
 export const NPCS = [
   {
     name: "Supervisor NEST",
     img: "icons/svg/castle.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 2, agi: 3, res: 3, men: 4, per: 3, pre: 2, int: 4 },
       {
         insect: "Libélula",
@@ -64,7 +39,7 @@ export const NPCS = [
   {
     name: "Operador de Campo NEST",
     img: "icons/svg/sword.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 4, agi: 4, res: 3, men: 2, per: 3, pre: 3, int: 1 },
       {
         insect: "Besouro",
@@ -97,7 +72,7 @@ export const NPCS = [
   {
     name: "Caçador Pet Shop",
     img: "icons/svg/skull.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 3, agi: 5, res: 2, men: 2, per: 4, pre: 4, int: 1 },
       {
         insect: "Aranha",
@@ -131,7 +106,7 @@ export const NPCS = [
   {
     name: "Vagabundo Stray Dogs",
     img: "icons/svg/wolf.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 3, agi: 4, res: 3, men: 3, per: 3, pre: 3, int: 2 },
       {
         insect: "Rato",
@@ -165,7 +140,7 @@ export const NPCS = [
   {
     name: "Fantasma Hollow",
     img: "icons/svg/ghost.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 1, agi: 3, res: 2, men: 5, per: 4, pre: 2, int: 4 },
       {
         insect: "Camaleão",
@@ -192,7 +167,7 @@ export const NPCS = [
   {
     name: "Instigador The Swarm",
     img: "icons/svg/hazard.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 2, agi: 2, res: 2, men: 3, per: 3, pre: 2, int: 5 },
       {
         insect: "Vespa",
@@ -219,7 +194,7 @@ export const NPCS = [
   {
     name: "Pesquisador Prometheus",
     img: "icons/svg/tech.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 1, agi: 2, res: 2, men: 5, per: 4, pre: 2, int: 6 },
       {
         insect: "Formiga",
@@ -253,7 +228,7 @@ export const NPCS = [
   {
     name: "Informante The Web",
     img: "icons/svg/spider.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 1, agi: 3, res: 2, men: 4, per: 5, pre: 2, int: 5 },
       {
         insect: "Aranha",
@@ -280,7 +255,7 @@ export const NPCS = [
   {
     name: "Recrutador Blackmoth",
     img: "icons/svg/military.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 4, agi: 3, res: 4, men: 3, per: 3, pre: 3, int: 2 },
       {
         insect: "Louva-a-deus",
@@ -314,7 +289,7 @@ export const NPCS = [
   {
     name: "Infectado em Colapso",
     img: "icons/svg/explosion.svg",
-    system: npcSystem(
+    system: buildNpcSystem(
       { for: 5, agi: 3, res: 4, men: 1, per: 2, pre: 3, int: 0 },
       {
         insect: "Escorpião",

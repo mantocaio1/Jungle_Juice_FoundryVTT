@@ -35,7 +35,7 @@ Cole esta URL na tela de instalação de sistemas do Foundry:
 https://raw.githubusercontent.com/mantocaio1/jungle_juice_foundryvtt/main/system.json
 ```
 
-## Regras implementadas (v0.2.0)
+## Regras implementadas (v0.3.0)
 
 ### Atributos (customização)
 
@@ -62,6 +62,12 @@ https://raw.githubusercontent.com/mantocaio1/jungle_juice_foundryvtt/main/system
 - **Descanso Curto (1h):** recupera **RES** em HP e **−5** Insanidade
 - **Descanso Longo (8h):** HP ao máximo e **−15** Insanidade
 
+### Condições & Morrendo
+
+- **Recuperação:** condições ativas com teste (↻ na ficha) — Atordoado/Envenenado/Sangrando RES CD 12, Alucinado MEN CD 14, Queimando/Imobilizado AGI CD 12
+- **Estabilizar:** RES CD 12 ou cura (💊) em 0 HP → mínimo 1 HP, remove Morrendo
+- **Sobrevivência:** D20 puro por turno em Morrendo (≤10 perde 1 HP)
+
 ### Compêndios
 
 Dois compêndios são populados automaticamente na **primeira carga do mundo** (GM):
@@ -70,8 +76,9 @@ Dois compêndios são populados automaticamente na **primeira carga do mundo** (
 |-----------|------|----------|
 | **Facções** | Journal | 8 facções com lore do Guia do Player (NEST, Pet Shop, Stray Dogs, Hollow, The Swarm, Prometheus, The Web, Blackmoth) |
 | **NPCs** | Actor | 10 NPCs pré-prontos — um representante por facção + Infectado em Colapso |
+| **Bestiário** | Actor | 10 ameaças de combate (Fraco → Boss) — infectados, Pet Shop, enxames, boss Prometheus |
 
-Arraste NPCs do compêndio para a cena ou crie cópias na aba Atores. Jogadores têm acesso de leitura às facções.
+Arraste NPCs ou criaturas do compêndio para a cena ou crie cópias na aba Atores. Jogadores têm acesso de leitura às facções.
 
 ### Ficha standalone (Discord)
 
@@ -97,7 +104,9 @@ jungle_juice_foundryvtt/     ← repositório Git
     │   ├── data/
     │   │   ├── character-model.mjs
     │   │   ├── factions.mjs
-    │   │   └── npcs.mjs
+    │   │   ├── npcs.mjs
+    │   │   ├── bestiary.mjs
+    │   │   └── npc-builder.mjs
     │   ├── compendiums.mjs
     │   ├── healing.mjs
     │   ├── dice.mjs

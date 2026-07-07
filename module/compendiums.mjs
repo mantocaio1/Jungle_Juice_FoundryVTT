@@ -1,9 +1,11 @@
 import { SYSTEM_ID } from "./config.mjs";
 import { FACTIONS } from "./data/factions.mjs";
 import { NPCS } from "./data/npcs.mjs";
+import { BESTIARY } from "./data/bestiary.mjs";
 
 const PACK_FACTIONS = `${SYSTEM_ID}.faccoes`;
 const PACK_NPCS = `${SYSTEM_ID}.npcs`;
+const PACK_BESTIARY = `${SYSTEM_ID}.bestiario`;
 
 /**
  * Popula os compêndios do sistema na primeira carga do mundo (GM ativo).
@@ -14,6 +16,7 @@ export async function seedCompendiums() {
 
   await seedFactionPack();
   await seedNpcPack();
+  await seedBestiaryPack();
 }
 
 /**
@@ -76,5 +79,25 @@ async function seedNpcPack() {
 
     await Actor.implementation.createDocuments(data, { pack: PACK_NPCS });
     ui.notifications.info(`Compêndio "NPCs" populado (${NPCS.length} entradas).`);
+  });
+}
+
+async function seedBestiaryPack() {
+  await withUnlockedPack(PACK_BESTIARY, async () => {
+    const data = BESTIARY.map((entry) => ({
+      name: entry.name,
+      type: "npc",
+      img: entry.img,
+      system: entry.system,
+      flags: {
+        [SYSTEM_ID]: {
+          compendium: "bestiary",
+          threat: entry.threat,
+        },
+      },
+    }));
+
+    await Actor.implementation.createDocuments(data, { pack: PACK_BESTIARY });
+    ui.notifications.info(`Compêndio "Bestiário" populado (${BESTIARY.length} entradas).`);
   });
 }

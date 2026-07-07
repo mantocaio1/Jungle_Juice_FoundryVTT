@@ -10,3 +10,5 @@ packs/faccoes/*
 !packs/faccoes/.gitkeep
 packs/npcs/*
 !packs/npcs/.gitkeep
+packs/bestiario/*
+!packs/bestiario/.gitkeep

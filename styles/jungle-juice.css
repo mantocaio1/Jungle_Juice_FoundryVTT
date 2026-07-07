@@ -280,8 +280,26 @@
 
 .jungle-juice.sheet.actor .conditions-grid {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.jungle-juice.sheet.actor .condition-row {
+  display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  align-items: center;
+}
+
+.jungle-juice.sheet.actor .condition-recover {
+  background: transparent;
+  border: 1px solid #2196F3;
+  color: #2196F3;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
 }
 
 .jungle-juice.sheet.actor .condition-toggle {

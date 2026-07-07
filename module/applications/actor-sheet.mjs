@@ -18,9 +18,9 @@ import {
   rollDamage,
   applyDamage,
 } from "../dice.mjs";
-import { toggleCondition } from "../conditions.mjs";
+import { toggleCondition, tryRecoverCondition } from "../conditions.mjs";
 import { unlockRunaway, activateRunaway, exitRunaway, sendHallucination } from "../insanity.mjs";
-import { useHealingItem, shortRest, longRest } from "../healing.mjs";
+import { useHealingItem, shortRest, longRest, stabilizeDying } from "../healing.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -44,6 +44,8 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       removeAbility: JungleJuiceActorSheet.#onRemoveAbility,
       useAbility: JungleJuiceActorSheet.#onUseAbility,
       toggleCondition: JungleJuiceActorSheet.#onToggleCondition,
+      recoverCondition: JungleJuiceActorSheet.#onRecoverCondition,
+      stabilizeDying: JungleJuiceActorSheet.#onStabilizeDying,
       unlockRunaway: JungleJuiceActorSheet.#onUnlockRunaway,
       activateRunaway: JungleJuiceActorSheet.#onActivateRunaway,
       exitRunaway: JungleJuiceActorSheet.#onExitRunaway,
@@ -99,6 +101,11 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     context.conditions = CONDITIONS.map((c) => ({
       ...c,
       active: this.actor.statuses.has(c.id),
+      canRecover: Boolean(c.recovery),
+      showRecover: this.actor.statuses.has(c.id) && Boolean(c.recovery),
+      recoveryLabel: c.recovery
+        ? `${ATTRIBUTES[c.recovery.attr]?.abbr ?? c.recovery.attr.toUpperCase()} CD ${c.recovery.dc}`
+        : null,
     }));
 
     context.isGM = game.user.isGM;
@@ -373,6 +380,19 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
   static async #onToggleCondition(event, target) {
     const conditionId = target.dataset.condition;
     await toggleCondition(this.actor, conditionId);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onRecoverCondition(event, target) {
+    const conditionId = target.dataset.condition;
+    await tryRecoverCondition(this.actor, conditionId);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onStabilizeDying() {
+    await stabilizeDying(this.actor);
     this.render(false);
   }
 
