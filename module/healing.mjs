@@ -38,25 +38,29 @@ export async function adjustInsanity(actor, delta) {
 /**
  * Usa um item equipado como cura — rola o dado do tier (+1d4/+1d6/+1d8).
  * @param {Actor} actor
- * @param {number} index índice em system.items
+ * @param {string} itemId ID do documento Item embutido
  */
-export async function useHealingItem(actor, index) {
-  const item = actor.system.items?.[index];
-  if (!item?.name?.trim()) {
+export async function useHealingItem(actor, itemId) {
+  const item = actor.items.get(itemId);
+  if (!item || item.type !== "gear") {
+    ui.notifications.warn("Item não encontrado.");
+    return;
+  }
+  if (!item.name?.trim()) {
     ui.notifications.warn("Defina o nome do item antes de usar como cura.");
     return;
   }
 
   await spendTurnAction(actor, "support");
 
-  const tier = ITEM_TIERS[item.tier] ?? ITEM_TIERS["1"];
+  const tier = ITEM_TIERS[item.system.tier] ?? ITEM_TIERS["1"];
   const roll = await new Roll(tier.heal).evaluate();
   const healed = roll.total;
   const { newHp, stabilized } = await applyHealing(actor, healed);
 
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `Cura — ${item.name.trim()} (Tier ${item.tier}: ${tier.label})`,
+    flavor: `Cura — ${item.name.trim()} (Tier ${item.system.tier}: ${tier.label})`,
   });
 
   const stableLine = stabilized ? `<p>🩹 <em>Estabilizado</em> — saiu do estado Morrendo.</p>` : "";

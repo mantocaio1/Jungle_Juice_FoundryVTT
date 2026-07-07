@@ -114,21 +114,26 @@
   </div>
 
   <div class="tab items" data-group="primary" data-tab="items" {{#unless (eq activeTab "items")}}hidden{{/unless}}>
-    {{#each system.items as |item index|}}
-    <div class="item-card" data-item-index="{{index}}">
+    {{#each gearItems as |item index|}}
+    <div class="item-card" data-item-id="{{item.id}}">
       <div class="item-slot">SLOT {{add index 1}}</div>
       <div class="item-row">
         <input type="text" data-it-field="name" value="{{item.name}}" placeholder="Nome do item"/>
         <select data-it-field="tier">
           {{#each ../config.itemTiers as |tier tierKey|}}
-          <option value="{{tierKey}}" {{#if (eq item.tier tierKey)}}selected{{/if}}>Tier {{tierKey}} — {{tier.label}} ({{tier.bonus}})</option>
+          <option value="{{tierKey}}" {{#if (eq item.system.tier tierKey)}}selected{{/if}}>Tier {{tierKey}} — {{tier.label}} ({{tier.bonus}})</option>
           {{/each}}
         </select>
-        <button type="button" class="btn-heal" data-action="useHealingItem" data-index="{{index}}" title="Usar como cura (dado do tier)">💊</button>
+        <button type="button" class="btn-heal" data-action="useHealingItem" data-item-id="{{item.id}}" title="Usar como cura (dado do tier)">💊</button>
+        <button type="button" class="btn-remove" data-action="removeItem" data-item-id="{{item.id}}" title="Remover item">✕</button>
       </div>
-      <input type="text" data-it-field="desc" value="{{item.desc}}" placeholder="Como se relaciona com o Complex?"/>
+      <input type="text" data-it-field="desc" value="{{item.system.desc}}" placeholder="Como se relaciona com o Complex?"/>
     </div>
     {{/each}}
+    {{#if canAddItem}}
+    <button type="button" class="btn-add" data-action="addItem">+ Adicionar Item</button>
+    {{/if}}
+    <p class="hint">Itens são documentos Foundry — clique com o direito no item na aba Itens do ator para abrir a ficha completa.</p>
   </div>
 
   <div class="tab rolls" data-group="primary" data-tab="rolls" {{#unless (eq activeTab "rolls")}}hidden{{/unless}}>

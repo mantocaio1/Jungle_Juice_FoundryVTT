@@ -2,7 +2,7 @@
   "id": "jungle-juice",
   "title": "Jungle Juice RPG",
   "description": "Sistema de mesa para Jungle Juice RPG — horror, suspense e Insecta Complex. Compatível com Foundry VTT v14.364.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "compatibility": {
     "minimum": "14",
     "verified": "14.364"
@@ -85,6 +85,9 @@
       "npc": {
         "htmlFields": ["origin", "motivation"]
       }
+    },
+    "Item": {
+      "gear": {}
     }
   },
   "socket": false,

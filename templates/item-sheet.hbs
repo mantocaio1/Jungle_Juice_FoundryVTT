@@ -1,0 +1,25 @@
+<div class="sheet-wrapper item-sheet-wrapper">
+  <header class="sheet-header">
+    <img class="profile-img" src="{{document.img}}" data-edit="img" title="{{document.name}}"/>
+    <div class="header-fields">
+      <h1 class="charname">
+        <input type="text" name="name" value="{{document.name}}" placeholder="Nome do item"/>
+      </h1>
+      <div class="item-tier-row">
+        <label>Tier</label>
+        <select name="system.tier">
+          {{#each config.itemTiers as |tier tierKey|}}
+          <option value="{{tierKey}}" {{#if (eq system.tier tierKey)}}selected{{/if}}>
+            Tier {{tierKey}} — {{tier.label}} ({{tier.bonus}})
+          </option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+  </header>
+  <section class="sheet-body">
+    <label>Relação com o Complex</label>
+    <textarea name="system.desc" rows="3" placeholder="Como este item se relaciona com o Insecta Complex?">{{system.desc}}</textarea>
+    <p class="hint">Cura: rola {{tierHeal}} · Ataque: bônus {{tierBonus}}</p>
+  </section>
+</div>

@@ -99,8 +99,11 @@ export async function applyAbilityInsanity(actor, ability) {
  * @returns {string}
  */
 export function appendItemBonus(formula, item) {
-  if (!item?.name?.trim()) return formula;
-  const bonus = ITEM_TIERS[item.tier ?? "1"]?.heal;
+  if (!item) return formula;
+  const name = item.name?.trim();
+  if (!name) return formula;
+  const tier = item.system?.tier ?? item.tier ?? "1";
+  const bonus = ITEM_TIERS[tier]?.heal;
   if (!bonus) return formula;
   const base = formula?.trim() ?? "";
   return base ? `${base} + ${bonus}` : bonus;

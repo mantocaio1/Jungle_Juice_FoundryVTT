@@ -3,6 +3,9 @@
     "Actor": {
       "character": "Personagem",
       "npc": "NPC"
+    },
+    "Item": {
+      "gear": "Equipamento"
     }
   },
   "JUNGLEJUICE": {

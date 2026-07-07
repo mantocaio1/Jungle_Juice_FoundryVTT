@@ -464,3 +464,75 @@
   text-align: center;
   line-height: 1.2;
 }
+
+.jungle-juice.sheet.actor .btn-remove {
+  background: transparent;
+  border: 1px solid #5a2a2a;
+  color: #e57373;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.jungle-juice.sheet.item {
+  --jj-bg: #080e0a;
+  --jj-surface: #0c1610;
+  --jj-border: #1a2e1e;
+  --jj-accent: #4CAF70;
+  --jj-text: #c0d0b8;
+  font-family: "Courier New", monospace;
+  color: var(--jj-text);
+  background: var(--jj-bg);
+}
+
+.jungle-juice.sheet.item .window-content {
+  background: var(--jj-bg);
+  padding: 0;
+}
+
+.jungle-juice.sheet.item .item-sheet-wrapper {
+  padding: 12px;
+}
+
+.jungle-juice.sheet.item .sheet-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.jungle-juice.sheet.item .profile-img {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--jj-border);
+  border-radius: 8px;
+}
+
+.jungle-juice.sheet.item input,
+.jungle-juice.sheet.item select,
+.jungle-juice.sheet.item textarea {
+  width: 100%;
+  background: #060c08;
+  border: 1px solid var(--jj-border);
+  border-radius: 5px;
+  color: var(--jj-text);
+  font-family: inherit;
+}
+
+.jungle-juice.sheet.item .charname input {
+  font-size: 1.1rem;
+  color: var(--jj-accent);
+  border: none;
+  background: transparent;
+}
+
+.jungle-juice.sheet.item .item-tier-row {
+  margin-top: 8px;
+}
+
+.jungle-juice.sheet.item .hint {
+  font-size: 11px;
+  color: #6a8a70;
+  margin-top: 8px;
+}

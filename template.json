@@ -5,6 +5,7 @@
     "npc": {}
   },
   "Item": {
-    "types": []
+    "types": ["gear"],
+    "gear": {}
   }
 }

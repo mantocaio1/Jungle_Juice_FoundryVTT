@@ -7,6 +7,7 @@ import {
   MAX_ABILITIES,
   CONDITIONS,
   FACTION_NAMES,
+  MAX_ITEMS,
 } from "../config.mjs";
 import {
   rollTest,
@@ -28,6 +29,13 @@ import {
   resetTurnActions,
   spendTurnAction,
 } from "../combat-actions.mjs";
+import {
+  getGearItems,
+  migrateLegacyItems,
+  createGearItem,
+  deleteGearItem,
+  itemRollData,
+} from "../items.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -62,6 +70,8 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       longRest: JungleJuiceActorSheet.#onLongRest,
       toggleTurnAction: JungleJuiceActorSheet.#onToggleTurnAction,
       resetTurnActions: JungleJuiceActorSheet.#onResetTurnActions,
+      addItem: JungleJuiceActorSheet.#onAddItem,
+      removeItem: JungleJuiceActorSheet.#onRemoveItem,
     },
   };
 
@@ -124,6 +134,8 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     context.runawayUnlocked = system.runaway?.unlocked ?? false;
     context.runawayActive = system.runaway?.active ?? false;
     context.turnActions = getTurnActionsState(this.actor);
+    context.gearItems = getGearItems(this.actor);
+    context.canAddItem = context.gearItems.length < MAX_ITEMS;
 
     return context;
   }
@@ -148,6 +160,13 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
   _onRender(context, options) {
     super._onRender(context, options);
     this.tabGroups ??= { primary: "identity" };
+
+    if (!this._jjItemsMigrated) {
+      this._jjItemsMigrated = true;
+      migrateLegacyItems(this.actor).then((did) => {
+        if (did) this.render(false);
+      });
+    }
 
     this.element.querySelectorAll(".sheet-tabs [data-tab]").forEach((tab) => {
       tab.addEventListener("click", (event) => {
@@ -179,7 +198,17 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     this.element.querySelectorAll(".item-card [data-it-field]").forEach((el) => {
       el.addEventListener("change", (event) => {
         event.stopPropagation();
-        this.actor.update({ "system.items": this.#collectItems() });
+        const card = el.closest(".item-card");
+        const itemId = card?.dataset.itemId;
+        const item = itemId ? this.actor.items.get(itemId) : null;
+        if (!item) return;
+
+        const update = {
+          name: card.querySelector('[data-it-field="name"]')?.value ?? item.name,
+          "system.tier": card.querySelector('[data-it-field="tier"]')?.value ?? item.system.tier,
+          "system.desc": card.querySelector('[data-it-field="desc"]')?.value ?? item.system.desc,
+        };
+        item.update(update);
       });
     });
   }
@@ -192,15 +221,6 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       desc: card.querySelector('[data-ab-field="desc"]')?.value ?? "",
       weakness: card.querySelector('[data-ab-field="weakness"]')?.value ?? "",
       damage: card.querySelector('[data-ab-field="damage"]')?.value ?? "",
-    }));
-  }
-
-  /** @returns {object[]} */
-  #collectItems() {
-    return Array.from(this.element.querySelectorAll(".item-card")).map((card) => ({
-      name: card.querySelector('[data-it-field="name"]')?.value ?? "",
-      tier: card.querySelector('[data-it-field="tier"]')?.value ?? "1",
-      desc: card.querySelector('[data-it-field="desc"]')?.value ?? "",
     }));
   }
 
@@ -237,7 +257,7 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     const sheet = this;
     const presetAttr = target.dataset.attr;
     const abilities = sheet.actor.system.abilities ?? [];
-    const items = (sheet.actor.system.items ?? []).filter((item) => item.name?.trim());
+    const items = getGearItems(sheet.actor).filter((item) => item.name?.trim());
 
     // Alvo selecionado (targeting) do usuário atual.
     const targetTokens = Array.from(game.user.targets);
@@ -265,9 +285,9 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       .join("");
 
     const itemOptions = items
-      .map((item, i) => {
-        const tier = ITEM_TIERS[item.tier ?? "1"];
-        return `<option value="${i}">${item.name.trim()} (Tier ${item.tier} ${tier?.bonus ?? ""})</option>`;
+      .map((item) => {
+        const tier = ITEM_TIERS[item.system.tier ?? "1"];
+        return `<option value="${item.id}">${item.name.trim()} (Tier ${item.system.tier} ${tier?.bonus ?? ""})</option>`;
       })
       .join("");
 
@@ -332,8 +352,8 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     const ac = targetActor ? targetAc : Number(data.ac ?? 12);
     const abilityIndex = Number(data.ability ?? -1);
     const ability = abilityIndex >= 0 ? abilities[abilityIndex] : null;
-    const itemIndex = Number(data.item ?? -1);
-    const attackItem = itemIndex >= 0 ? items[itemIndex] : null;
+    const attackItemDoc = data.item && data.item !== "-1" ? sheet.actor.items.get(data.item) : null;
+    const attackItem = itemRollData(attackItemDoc);
 
     // Rola o ataque contra o AC do alvo.
     const { hit, natural20 } = await rollAttack({ actor: sheet.actor, attrKey, ac });
@@ -463,8 +483,8 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
 
   /** @param {PointerEvent} event */
   static async #onUseHealingItem(event, target) {
-    const index = Number(target.dataset.index);
-    await useHealingItem(this.actor, index);
+    const itemId = target.dataset.itemId;
+    await useHealingItem(this.actor, itemId);
     this.render(false);
   }
 
@@ -490,6 +510,19 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
   /** @param {PointerEvent} event */
   static async #onResetTurnActions() {
     await resetTurnActions(this.actor);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onAddItem() {
+    await createGearItem(this.actor);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onRemoveItem(event, target) {
+    const itemId = target.dataset.itemId;
+    await deleteGearItem(this.actor, itemId);
     this.render(false);
   }
 }

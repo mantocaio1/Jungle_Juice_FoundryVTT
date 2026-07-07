@@ -1,11 +1,17 @@
 import { SYSTEM_ID } from "./module/config.mjs";
 import { CharacterModel, NpcModel } from "./module/data/character-model.mjs";
+import { GearModel } from "./module/data/item-model.mjs";
 import { JungleJuiceActor } from "./module/documents.mjs";
 import { JungleJuiceActorSheet } from "./module/applications/actor-sheet.mjs";
+import { JungleJuiceItemSheet } from "./module/applications/item-sheet.mjs";
 import { registerHandlebarsHelpers } from "./module/helpers.mjs";
 import { registerConditions, applyStartOfTurnEffects } from "./module/conditions.mjs";
 import { onInsanityChange } from "./module/insanity.mjs";
 import { seedCompendiums } from "./module/compendiums.mjs";
+import {
+  migrateAllActorItems,
+  extractLegacyItemsFromCreateData,
+} from "./module/items.mjs";
 
 Hooks.once("init", () => {
   console.log(`${SYSTEM_ID} | Inicializando sistema Jungle Juice RPG`);
@@ -16,6 +22,7 @@ Hooks.once("init", () => {
   CONFIG.Actor.documentClass = JungleJuiceActor;
   CONFIG.Actor.dataModels.character = CharacterModel;
   CONFIG.Actor.dataModels.npc = NpcModel;
+  CONFIG.Item.dataModels.gear = GearModel;
 
   CONFIG.Actor.trackableAttributes = {
     character: {
@@ -33,6 +40,12 @@ Hooks.once("init", () => {
     makeDefault: true,
     label: "Jungle Juice RPG",
   });
+
+  foundry.documents.collections.Items.registerSheet(SYSTEM_ID, JungleJuiceItemSheet, {
+    types: ["gear"],
+    makeDefault: true,
+    label: "Jungle Juice RPG",
+  });
 });
 
 // Aplica dano/insanidade contínuos no início do turno do combatente.
@@ -43,6 +56,10 @@ Hooks.on("updateCombat", async (combat, changed) => {
 });
 
 // Captura o valor antigo de insanidade antes do update ser aplicado.
+Hooks.on("preCreateActor", (document, data, options, userId) => {
+  extractLegacyItemsFromCreateData(data);
+});
+
 Hooks.on("preUpdateActor", (actor, changed, options) => {
   if (changed?.system?.insanity?.value !== undefined) {
     options.jjInsanityOld = actor.system.insanity.value;
@@ -59,5 +76,6 @@ Hooks.on("updateActor", async (actor, changed, options) => {
 
 Hooks.once("ready", async () => {
   console.log(`${SYSTEM_ID} | Sistema pronto`);
+  await migrateAllActorItems();
   await seedCompendiums();
 });
