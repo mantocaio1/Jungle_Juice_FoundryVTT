@@ -7,7 +7,6 @@ import { JungleJuiceItemSheet } from "./module/applications/item-sheet.mjs";
 import { registerHandlebarsHelpers } from "./module/helpers.mjs";
 import { registerConditions, applyStartOfTurnEffects } from "./module/conditions.mjs";
 import { onInsanityChange } from "./module/insanity.mjs";
-import { seedCompendiums } from "./module/compendiums.mjs";
 import {
   migrateAllActorItems,
   extractLegacyItemsFromCreateData,
@@ -77,5 +76,4 @@ Hooks.on("updateActor", async (actor, changed, options) => {
 Hooks.once("ready", async () => {
   console.log(`${SYSTEM_ID} | Sistema pronto`);
   await migrateAllActorItems();
-  await seedCompendiums();
 });

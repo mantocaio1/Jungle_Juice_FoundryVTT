@@ -2,45 +2,65 @@
 
 Sistema de mesa para **Jungle Juice RPG** no [Foundry Virtual Tabletop](https://foundryvtt.com/) v14.364.
 
-Repositório: [github.com/mantocaio1/jungle_juice_foundryvtt](https://github.com/mantocaio1/jungle_juice_foundryvtt)
+Repositório: [github.com/mantocaio1/Jungle_Juice_FoundryVTT](https://github.com/mantocaio1/Jungle_Juice_FoundryVTT)
 
 ## Requisitos
 
 - Foundry VTT **v14.364** (build 364) ou superior na geração 14
 
+## Instalação (manifest URL — recomendado)
+
+### 1. Sistema (obrigatório)
+
+Na tela **Instalar Sistema**, cole:
+
+```
+https://raw.githubusercontent.com/mantocaio1/Jungle_Juice_FoundryVTT/main/system.json
+```
+
+### 2. Módulo de compêndios (recomendado)
+
+Na tela **Instalar Módulo**, cole:
+
+```
+https://raw.githubusercontent.com/mantocaio1/Jungle_Juice_FoundryVTT/main/companion/module.json
+```
+
+> Os pacotes de instalação via manifest usam os [releases do GitHub](https://github.com/mantocaio1/Jungle_Juice_FoundryVTT/releases). Para a primeira instalação, crie um release com tag `v0.6.0` ou use o symlink de desenvolvimento abaixo.
+
+Ative o módulo **Jungle Juice — Compêndios** na configuração do mundo.
+
 ## Instalação (desenvolvimento)
 
-1. Clone este repositório:
+1. Clone o repositório:
    ```powershell
-   git clone https://github.com/mantocaio1/jungle_juice_foundryvtt.git
+   git clone https://github.com/mantocaio1/Jungle_Juice_FoundryVTT.git
    ```
 
-2. Crie um symlink (ou copie a pasta) para o diretório de sistemas do Foundry:
+2. Symlink do **sistema**:
    ```powershell
-   # Ajuste o caminho do userData do seu Foundry
    New-Item -ItemType SymbolicLink `
      -Path "$env:LOCALAPPDATA\FoundryVTT\Data\systems\jungle-juice" `
-     -Target "C:\Users\Administrator\Projects\jungle_juice_foundryvtt"
+     -Target "C:\caminho\para\Jungle_Juice_FoundryVTT"
    ```
 
-   > A pasta dentro de `Data/systems/` **deve** se chamar `jungle-juice` (igual ao `id` em `system.json`).
+3. Symlink do **módulo de compêndios**:
+   ```powershell
+   New-Item -ItemType SymbolicLink `
+     -Path "$env:LOCALAPPDATA\FoundryVTT\Data\modules\jungle-juice-compendia" `
+     -Target "C:\caminho\para\Jungle_Juice_FoundryVTT\companion"
+   ```
 
-3. No Foundry, crie um mundo usando o sistema **Jungle Juice RPG**.
+   > A pasta do sistema deve se chamar `jungle-juice` e a do módulo `jungle-juice-compendia` (iguais aos `id` nos manifests).
 
-## Instalação (manifest URL)
+4. Crie um mundo com o sistema **Jungle Juice RPG** e ative o módulo de compêndios.
 
-Cole esta URL na tela de instalação de sistemas do Foundry:
+## Regras implementadas (v0.6.0)
 
-```
-https://raw.githubusercontent.com/mantocaio1/jungle_juice_foundryvtt/main/system.json
-```
-
-## Regras implementadas (v0.3.0)
-
-### Atributos (customização)
+### Atributos
 
 - 7 atributos: FOR, AGI, RES, MEN, PER, PRE, INT
-- **Começam em 0** — orçamento total de **21 pontos** a distribuir
+- **Começam em 0** — orçamento total de **21 pontos**
 - Máximo **7** por atributo na criação
 - HP = `10 + RES × 2` | AC = `8 + AGI`
 
@@ -48,87 +68,79 @@ https://raw.githubusercontent.com/mantocaio1/jungle_juice_foundryvtt/main/system
 
 - 5 pontos base (+1 por fraqueza extra, máx +2)
 - Tipos: Passiva (1pt), Ativa leve (2pt/+5 ins), Ativa forte (3pt/+10 ins), Especial (4pt/+15 ins)
+- Runaway desbloqueado pelo Mestre em Colapso (100); alucinações privadas a partir de 50
 
-### Rolagens
+### Combate
 
-- Teste: `D20 + Atributo` vs CD
-- Ataque: `D20 + Atributo` vs AC (natural 20 = acerto garantido)
-- Iniciativa: `D20 + AGI`
-- Estado Morrendo: rolagem de sobrevivência `D20` (≤10 perde 1 HP)
+- **4 ações por turno:** Principal, Movimentação, Suporte, Livre (tracker na ficha)
+- Ataque com diálogo: atributo, AC, habilidade do Complex, bônus de item (+1d4/1d6/1d8)
+- 8 condições com desvantagem, dano/insanidade por turno e testes de recuperação
+- Morrendo: sobrevivência D20, estabilizar RES CD 12, cura estabiliza
+
+### Itens
+
+- Documentos Foundry (`gear`) — máx. 2 por personagem (Mestre pode adicionar mais)
+- Ficha de item própria; migração automática de `system.items` legado
 
 ### Cura & Descanso
 
-- **Item de cura (💊):** rola o dado do tier — Tier 1 `1d4`, Tier 2 `1d6`, Tier 3 `1d8`
-- **Descanso Curto (1h):** recupera **RES** em HP e **−5** Insanidade
-- **Descanso Longo (8h):** HP ao máximo e **−15** Insanidade
+- Item de cura (💊): dado do tier (1d4 / 1d6 / 1d8)
+- Descanso Curto: +RES HP, −5 Ins | Descanso Longo: HP cheio, −15 Ins
 
-### Condições & Morrendo
+### Compêndios (módulo companion)
 
-- **Recuperação:** condições ativas com teste (↻ na ficha) — Atordoado/Envenenado/Sangrando RES CD 12, Alucinado MEN CD 14, Queimando/Imobilizado AGI CD 12
-- **Estabilizar:** RES CD 12 ou cura (💊) em 0 HP → mínimo 1 HP, remove Morrendo
-- **Sobrevivência:** D20 puro por turno em Morrendo (≤10 perde 1 HP)
-
-### Compêndios
-
-Dois compêndios são populados automaticamente na **primeira carga do mundo** (GM):
+Populados automaticamente na primeira carga do mundo (GM):
 
 | Compêndio | Tipo | Conteúdo |
 |-----------|------|----------|
-| **Facções** | Journal | 8 facções com lore do Guia do Player (NEST, Pet Shop, Stray Dogs, Hollow, The Swarm, Prometheus, The Web, Blackmoth) |
-| **NPCs** | Actor | 10 NPCs pré-prontos — um representante por facção + Infectado em Colapso |
-| **Bestiário** | Actor | 10 ameaças de combate (Fraco → Boss) — infectados, Pet Shop, enxames, boss Prometheus |
-
-Arraste NPCs ou criaturas do compêndio para a cena ou crie cópias na aba Atores. Jogadores têm acesso de leitura às facções.
+| **Facções** | Journal | 8 facções do Guia do Player |
+| **NPCs** | Actor | 10 NPCs pré-prontos |
+| **Bestiário** | Actor | 10 criaturas de combate |
+| **Macros do Mestre** | Macro | Horror, insanidade em massa, whispers |
+| **Cenas** | Journal | Templates de investigação, enigma, horror |
 
 ### Ficha standalone (Discord)
 
-A pasta [`ficha/`](ficha/) contém o criador de ficha fora do Foundry, alinhado com as mesmas regras:
-
-- Atributos **base 0**, **21 pontos** totais, máx **7** por atributo
-- Exportação formatada para Discord
+A pasta [`ficha/`](ficha/) contém o criador de ficha fora do Foundry:
 
 | Arquivo | Uso |
 |---------|-----|
-| `ficha/JungleJuice_Ficha.html` | Abrir no navegador (sem dependências) |
-| `ficha/JungleJuice_FichaCreator.jsx` | Componente React (mesma lógica) |
+| `ficha/JungleJuice_Ficha.html` | Abrir no navegador |
+| `ficha/JungleJuice_FichaCreator.jsx` | Componente React |
 
 ## Estrutura do projeto
 
 ```
-jungle_juice_foundryvtt/     ← repositório Git
-└── (instalado como) jungle-juice/   ← pasta em Data/systems/
-    ├── system.json
-    ├── jungle-juice.mjs
-    ├── module/
-    │   ├── config.mjs
-    │   ├── data/
-    │   │   ├── character-model.mjs
-    │   │   ├── factions.mjs
-    │   │   ├── npcs.mjs
-    │   │   ├── bestiary.mjs
-    │   │   └── npc-builder.mjs
-    │   ├── compendiums.mjs
-    │   ├── healing.mjs
-    │   ├── dice.mjs
-    │   ├── documents.mjs
-    │   └── applications/actor-sheet.mjs
-    ├── templates/actor-sheet.hbs
-    ├── styles/jungle-juice.css
-    ├── packs/                 # Compêndios (Facções + NPCs)
-    ├── ficha/                 # Criador de ficha standalone (HTML + React)
-    └── lang/pt-BR.json
+Jungle_Juice_FoundryVTT/
+├── system.json              # Sistema (regras + ficha)
+├── jungle-juice.mjs
+├── module/                  # Motor do sistema
+├── templates/
+├── styles/
+├── companion/               # Módulo opcional de compêndios
+│   ├── module.json
+│   ├── jungle-juice-compendia.mjs
+│   ├── module/data/         # Dados dos compêndios
+│   └── packs/
+└── ficha/                   # Criador standalone
 ```
+
+## Releases
+
+Tags `v*` disparam o workflow que gera:
+
+- `jungle-juice.zip` — sistema
+- `jungle-juice-compendia.zip` — módulo de compêndios
 
 ## Roadmap
 
-- [x] Esqueleto do sistema (v14 TypeDataModel)
-- [x] Ficha de personagem básica
-- [x] Rolagens D20, iniciativa, sobrevivência
-- [x] Condições de combate automatizadas
-- [x] Complex Runaway e alucinações (GM desbloqueia Runaway ao atingir 100)
-- [x] Compêndios (facções, NPCs)
-- [x] Cura e descanso (itens por tier, descanso curto/longo)
-- [x] Sincronizar ficha HTML com regra de atributos base 0
+- [x] MVP combate, insanidade, condições
+- [x] Compêndios, bestiário, macros e cenas
+- [x] Ações por turno e bônus de item em ataque
+- [x] Itens como documentos Foundry
+- [x] Módulo companion + manifests para instalação
+- [ ] Testes E2E automatizados
+- [ ] Submissão ao package browser oficial do Foundry
 
 ## Licença
 

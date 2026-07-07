@@ -1,0 +1,36 @@
+name: Release packages
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package system
+        run: |
+          mkdir -p dist/jungle-juice
+          rsync -av --exclude='.git' --exclude='companion' --exclude='ficha' --exclude='.github' --exclude='dist' --exclude='packs' \
+            ./ dist/jungle-juice/
+          cd dist && zip -r jungle-juice.zip jungle-juice
+
+      - name: Package companion module
+        run: |
+          mkdir -p dist/jungle-juice-compendia
+          rsync -av companion/ dist/jungle-juice-compendia/
+          cd dist && zip -r jungle-juice-compendia.zip jungle-juice-compendia
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/jungle-juice.zip
+            dist/jungle-juice-compendia.zip
+          generate_release_notes: true

@@ -1,20 +1,17 @@
-import { SYSTEM_ID } from "./config.mjs";
+import { MODULE_ID, SYSTEM_ID } from "./config.mjs";
 import { FACTIONS } from "./data/factions.mjs";
 import { NPCS } from "./data/npcs.mjs";
 import { BESTIARY } from "./data/bestiary.mjs";
 import { GM_MACROS } from "./data/gm-macros.mjs";
 import { SCENE_TEMPLATES } from "./data/scenes.mjs";
 
-const PACK_FACTIONS = `${SYSTEM_ID}.faccoes`;
-const PACK_NPCS = `${SYSTEM_ID}.npcs`;
-const PACK_BESTIARY = `${SYSTEM_ID}.bestiario`;
-const PACK_MACROS = `${SYSTEM_ID}.macros-mestre`;
-const PACK_SCENES = `${SYSTEM_ID}.cenas`;
+const PACK_FACTIONS = `${MODULE_ID}.faccoes`;
+const PACK_NPCS = `${MODULE_ID}.npcs`;
+const PACK_BESTIARY = `${MODULE_ID}.bestiario`;
+const PACK_MACROS = `${MODULE_ID}.macros-mestre`;
+const PACK_SCENES = `${MODULE_ID}.cenas`;
 
-/**
- * Popula os compêndios do sistema na primeira carga do mundo (GM ativo).
- * Só cria entradas se o pack existir e estiver vazio.
- */
+/** Popula os compêndios na primeira carga do mundo (GM ativo). */
 export async function seedCompendiums() {
   if (!game.user.isGM) return;
 
@@ -25,11 +22,6 @@ export async function seedCompendiums() {
   await seedScenePack();
 }
 
-/**
- * Desbloqueia temporariamente um compêndium locked, executa a seed e re-bloqueia.
- * @param {string} packId
- * @param {() => Promise<void>} seedFn
- */
 async function withUnlockedPack(packId, seedFn) {
   const pack = game.packs.get(packId);
   if (!pack || pack.index.size > 0) return;
@@ -54,10 +46,7 @@ async function seedFactionPack() {
           name: faction.name,
           type: "text",
           title: { show: true, level: 1 },
-          text: {
-            format: 1,
-            content: faction.content.trim(),
-          },
+          text: { format: 1, content: faction.content.trim() },
         },
       ],
       flags: {
@@ -70,7 +59,7 @@ async function seedFactionPack() {
     }));
 
     await JournalEntry.implementation.createDocuments(data, { pack: PACK_FACTIONS });
-    ui.notifications.info(`Compêndio "Facções" populado (${FACTIONS.length} entradas).`);
+    ui.notifications.info(`[Jungle Juice] Compêndio "Facções" populado (${FACTIONS.length} entradas).`);
   });
 }
 
@@ -84,7 +73,7 @@ async function seedNpcPack() {
     }));
 
     await Actor.implementation.createDocuments(data, { pack: PACK_NPCS });
-    ui.notifications.info(`Compêndio "NPCs" populado (${NPCS.length} entradas).`);
+    ui.notifications.info(`[Jungle Juice] Compêndio "NPCs" populado (${NPCS.length} entradas).`);
   });
 }
 
@@ -96,15 +85,12 @@ async function seedBestiaryPack() {
       img: entry.img,
       system: entry.system,
       flags: {
-        [SYSTEM_ID]: {
-          compendium: "bestiary",
-          threat: entry.threat,
-        },
+        [SYSTEM_ID]: { compendium: "bestiary", threat: entry.threat },
       },
     }));
 
     await Actor.implementation.createDocuments(data, { pack: PACK_BESTIARY });
-    ui.notifications.info(`Compêndio "Bestiário" populado (${BESTIARY.length} entradas).`);
+    ui.notifications.info(`[Jungle Juice] Compêndio "Bestiário" populado (${BESTIARY.length} entradas).`);
   });
 }
 
@@ -119,7 +105,7 @@ async function seedMacroPack() {
     }));
 
     await Macro.implementation.createDocuments(data, { pack: PACK_MACROS });
-    ui.notifications.info(`Compêndio "Macros do Mestre" populado (${GM_MACROS.length} entradas).`);
+    ui.notifications.info(`[Jungle Juice] Compêndio "Macros do Mestre" populado (${GM_MACROS.length} entradas).`);
   });
 }
 
@@ -133,21 +119,15 @@ async function seedScenePack() {
           name: scene.name,
           type: "text",
           title: { show: true, level: 1 },
-          text: {
-            format: 1,
-            content: scene.content.trim(),
-          },
+          text: { format: 1, content: scene.content.trim() },
         },
       ],
       flags: {
-        [SYSTEM_ID]: {
-          tagline: scene.tagline,
-          sceneId: scene.id,
-        },
+        [SYSTEM_ID]: { tagline: scene.tagline, sceneId: scene.id },
       },
     }));
 
     await JournalEntry.implementation.createDocuments(data, { pack: PACK_SCENES });
-    ui.notifications.info(`Compêndio "Cenas" populado (${SCENE_TEMPLATES.length} entradas).`);
+    ui.notifications.info(`[Jungle Juice] Compêndio "Cenas" populado (${SCENE_TEMPLATES.length} entradas).`);
   });
 }

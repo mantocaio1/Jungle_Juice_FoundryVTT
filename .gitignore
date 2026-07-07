@@ -6,13 +6,16 @@ dist/
 *.zip
 
 # Compendium LevelDB (populated em runtime pelo Foundry)
-packs/faccoes/*
-!packs/faccoes/.gitkeep
-packs/npcs/*
-!packs/npcs/.gitkeep
-packs/bestiario/*
-!packs/bestiario/.gitkeep
-packs/macros-mestre/*
-!packs/macros-mestre/.gitkeep
-packs/cenas/*
-!packs/cenas/.gitkeep
+companion/packs/faccoes/*
+!companion/packs/faccoes/.gitkeep
+companion/packs/npcs/*
+!companion/packs/npcs/.gitkeep
+companion/packs/bestiario/*
+!companion/packs/bestiario/.gitkeep
+companion/packs/macros-mestre/*
+!companion/packs/macros-mestre/.gitkeep
+companion/packs/cenas/*
+!companion/packs/cenas/.gitkeep
+
+# Legado (packs antigos no sistema — podem existir em instalações locais)
+packs/**/*
