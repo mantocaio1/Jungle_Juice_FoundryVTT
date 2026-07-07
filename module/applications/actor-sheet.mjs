@@ -82,7 +82,7 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
   static PARTS = {
     sheet: {
       template: "systems/jungle-juice/templates/actor-sheet.hbs",
-      scrollable: [""],
+      scrollable: [".sheet-body"],
     },
   };
 

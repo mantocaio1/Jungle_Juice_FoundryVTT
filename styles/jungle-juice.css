@@ -15,12 +15,16 @@
 .jungle-juice.sheet.actor .window-content {
   background: var(--jj-bg);
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .jungle-juice.sheet.actor .sheet-wrapper {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .jungle-juice.sheet.actor input,
@@ -120,12 +124,24 @@
   border-color: var(--jj-accent);
 }
 
+.jungle-juice.sheet.actor .sheet-header,
+.jungle-juice.sheet.actor .sheet-tabs {
+  flex: 0 0 auto;
+}
+
 .jungle-juice.sheet.actor .sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   padding: 14px;
 }
 
 .jungle-juice.sheet.actor .tab {
   display: block;
+}
+
+.jungle-juice.sheet.actor .tab[hidden] {
+  display: none;
 }
 
 .jungle-juice.sheet.actor .grid-2 {
