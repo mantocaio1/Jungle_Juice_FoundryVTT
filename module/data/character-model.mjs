@@ -3,6 +3,9 @@ import {
   MAX_ATTRIBUTE_AT_CREATION,
   BASE_COMPLEX_POINTS,
   MAX_EXTRA_WEAKNESSES,
+  HALLUCINATION_THRESHOLD,
+  RUNAWAY_THRESHOLD,
+  COLLAPSE_VALUE,
   getInsanityState,
 } from "../config.mjs";
 
@@ -97,6 +100,13 @@ export class CharacterModel extends foundry.abstract.TypeDataModel {
       ),
 
       dying: new BooleanField({ required: true, initial: false }),
+
+      runaway: new SchemaField({
+        // Ao atingir 100 (Colapso), o Runaway NÃO é forçado automaticamente:
+        // o Mestre precisa desbloquear (unlocked) para permitir a ativação.
+        unlocked: new BooleanField({ required: true, initial: false }),
+        active: new BooleanField({ required: true, initial: false }),
+      }),
     };
   }
 
@@ -129,6 +139,21 @@ export class CharacterModel extends foundry.abstract.TypeDataModel {
   /** @returns {string} */
   get insanityColor() {
     return getInsanityState(this.insanity.value).color;
+  }
+
+  /** @returns {boolean} Insanidade permite alucinações (50+). */
+  get canHallucinate() {
+    return this.insanity.value >= HALLUCINATION_THRESHOLD;
+  }
+
+  /** @returns {boolean} Insanidade permite Runaway (75+). */
+  get canRunaway() {
+    return this.insanity.value >= RUNAWAY_THRESHOLD;
+  }
+
+  /** @returns {boolean} Está em Colapso (100). */
+  get isCollapse() {
+    return this.insanity.value >= COLLAPSE_VALUE;
   }
 }
 

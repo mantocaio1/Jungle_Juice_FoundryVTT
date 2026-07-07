@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Jungle Juice RPG — Ficha</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080e0a;color:#c0d0b8;font-family:'Courier New',monospace;min-height:100vh}
+input,textarea,select{font-family:'Courier New',monospace;background:#060c08;border:1px solid #1a2e1e;border-radius:5px;padding:9px 12px;color:#c0d0b8;font-size:13px;outline:none;width:100%}
+input:focus,textarea:focus,select:focus{border-color:#4CAF70}
+input::placeholder,textarea::placeholder{color:#2a4a30}
+select option{background:#060c08}
+button{cursor:pointer;font-family:'Courier New',monospace}
+.card{background:#0c1610;border:1px solid #1a2e1e;border-radius:8px;padding:14px;margin-bottom:10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.hidden{display:none!important}
+.field{margin-bottom:12px}
+.field label{display:block;color:#2a4a30;font-size:10px;letter-spacing:1px;margin-bottom:5px;text-transform:uppercase}
+.btn-sm{background:#1a2e1e;border:1px solid #2a4a30;color:#4CAF70;border-radius:4px;padding:3px 10px;font-size:15px;font-weight:bold}
+.btn-r{background:#1a2e1e;border:1px solid #4CAF70;color:#4CAF70;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:bold}
+.btn-l{background:transparent;border:1px solid #1a2e1e;color:#4a6a50;padding:10px 18px;border-radius:6px;font-size:13px}
+.btn-danger{background:#1a0808;border:1px solid #3a1010;color:#F44336;border-radius:4px;padding:6px 10px;font-size:12px}
+.sec-title{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #1a2e1e}
+.nav{display:flex;gap:10px;margin-top:20px}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#080e0a}::-webkit-scrollbar-thumb{background:#1e3a26;border-radius:3px}
+@media(max-width:600px){
+  .grid2{grid-template-columns:1fr}
+  .step-txt{display:none}
+  .stat-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+var ATTRS=[
+  {key:"for",label:"Forca",abbr:"FOR",emoji:"\u{1F44A}",desc:"Combate corpo a corpo, forca fisica"},
+  {key:"agi",label:"Agilidade",abbr:"AGI",emoji:"\u{1F32A}\uFE0F",desc:"Velocidade, esquiva - define o AC"},
+  {key:"res",label:"Resistencia",abbr:"RES",emoji:"\u{1F4AA}",desc:"HP, sobrevivencia, exaustao"},
+  {key:"men",label:"Mente",abbr:"MEN",emoji:"\u{1F9E0}",desc:"Foco, controle do Complex"},
+  {key:"per",label:"Percepcao",abbr:"PER",emoji:"\u{1F441}\uFE0F",desc:"Sentidos, notar detalhes"},
+  {key:"pre",label:"Precisao",abbr:"PRE",emoji:"\u{1F3AF}",desc:"Ataques a distancia, acoes delicadas"},
+  {key:"int",label:"Inteligencia",abbr:"INT",emoji:"\u{1F4A1}",desc:"Raciocinio, social, enigmas"}
+];
+
+var ABTYPES=[
+  {value:"passiva",label:"Passiva simples",cost:1,ins:0,badge:"P",color:"#4CAF70"},
+  {value:"ativa_l",label:"Ativa leve",cost:2,ins:5,badge:"AL",color:"#FFC107"},
+  {value:"ativa_f",label:"Ativa forte",cost:3,ins:10,badge:"AF",color:"#FF9800"},
+  {value:"especial",label:"Especial/unica",cost:4,ins:15,badge:"E",color:"#F44336"}
+];
+
+var TIERS=[
+  {v:"1",label:"Tier 1 - Improvisado (+1d4)"},
+  {v:"2",label:"Tier 2 - Refinado (+1d6)"},
+  {v:"3",label:"Tier 3 - Especializado (+1d8)"}
+];
+
+var TBONUS={"1":"+1d4","2":"+1d6","3":"+1d8"};
+var TNAME={"1":"Improvisado","2":"Refinado","3":"Especializado"};
+var STEPS=["Identidade","Atributos","Complex","Itens","Exportar"];
+
+var state={
+  step:0,name:"",insect:"",origin:"",motivation:"",
+  attrs:{for:0,agi:0,res:0,men:0,per:0,pre:0,int:0},
+  abilities:[],extraWeak:0,
+  items:[{name:"",tier:"1",desc:""},{name:"",tier:"1",desc:""}],
+  insanity:0
+};
+
+function hp(){return 10+state.attrs.res*2}
+function ac(){return 8+state.attrs.agi}
+function spentPts(){return Object.values(state.attrs).reduce(function(s,v){return s+v},0)}
+function remPts(){return 21-spentPts()}
+function cxPts(){return 5+Math.min(state.extraWeak,2)}
+function usedCx(){return state.abilities.reduce(function(s,a){var t=ABTYPES.find(function(t){return t.value===a.type});return s+(t?t.cost:0)},0)}
+function remCx(){return cxPts()-usedCx()}
+function insColor(){var v=state.insanity;return v<25?"#4CAF70":v<50?"#FFC107":v<75?"#FF9800":v<100?"#F44336":"#B71C1C"}
+function insLabel(){var v=state.insanity;return v<25?"Estavel":v<50?"Tenso":v<75?"Abalado":v<100?"Perturbado":"COLAPSO"}
+
+// DOM helpers
+function el(tag,props,children){
+  var e=document.createElement(tag);
+  if(props) Object.entries(props).forEach(function(p){
+    var k=p[0],v=p[1];
+    if(k==="style"&&typeof v==="object") Object.assign(e.style,v);
+    else if(k.startsWith("on")) e.addEventListener(k.slice(2),v);
+    else e[k]=v;
+  });
+  if(children) [].concat(children).forEach(function(c){
+    if(c==null)return;
+    e.appendChild(typeof c==="string"?document.createTextNode(c):c);
+  });
+  return e;
+}
+function div(props,children){return el("div",props,children)}
+function span(props,children){return el("span",props,children)}
+function btn(props,children){return el("button",props,children)}
+function inp(props){return el("input",props)}
+function txt(props){return el("textarea",props)}
+function sel(props,opts,curVal){
+  var s=el("select",props);
+  opts.forEach(function(o){
+    var op=el("option",{value:o.v},o.label);
+    if(o.v===curVal)op.selected=true;
+    s.appendChild(op);
+  });
+  return s;
+}
+function clr(){return div({})}
+
+// ─── RENDER ───
+function render(){
+  var app=document.getElementById("app");
+  app.innerHTML="";
+  app.appendChild(renderHeader());
+  var wrap=div({style:{maxWidth:"860px",margin:"0 auto",padding:"20px 14px 40px"}});
+  var panels=[renderS0,renderS1,renderS2,renderS3,renderS4];
+  panels.forEach(function(fn,i){
+    var p=fn();
+    if(i!==state.step)p.classList.add("hidden");
+    wrap.appendChild(p);
+  });
+  app.appendChild(wrap);
+}
+
+function renderHeader(){
+  var bar=div({style:{display:"flex",gap:"5px"}});
+  STEPS.forEach(function(s,i){
+    var b=btn({
+      style:{flex:"1",background:state.step===i?"#1a2e1e":"transparent",border:"1px solid "+(state.step===i?"#4CAF70":"#1a2e1e"),color:state.step===i?"#4CAF70":"#2a4a30",borderRadius:"4px",padding:"7px 4px",fontSize:"11px"},
+      onclick:function(){goStep(i)}
+    },[String(i+1),span({className:"step-txt"},". "+s)]);
+    bar.appendChild(b);
+  });
+  return div({style:{borderBottom:"1px solid #1a2e1e",padding:"12px 14px",position:"sticky",top:"0",background:"#080e0a",zIndex:"100"}},[
+    div({style:{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}},[
+      span({style:{fontSize:"22px"}},"🦟"),
+      div({},[
+        div({style:{fontSize:"14px",fontWeight:"bold",color:"#4CAF70",letterSpacing:"2px"}},"JUNGLE JUICE RPG"),
+        div({style:{fontSize:"10px",color:"#2a4a30",letterSpacing:"1px"}},"CRIADOR DE FICHA")
+      ]),
+      state.name?span({style:{marginLeft:"auto",color:"#4a6a50",fontSize:"12px"}},"— "+state.name):null
+    ]),
+    bar
+  ]);
+}
+
+function secTitle(icon,text){
+  return div({className:"sec-title"},[
+    span({style:{fontSize:"18px"}},icon),
+    span({style:{color:"#4CAF70",fontWeight:"bold",fontSize:"16px",letterSpacing:"1px"}},text)
+  ]);
+}
+
+function navRow(left,right,rightLabel){
+  rightLabel=rightLabel||"Proximo →";
+  var d=div({className:"nav",style:{justifyContent:left&&right?"space-between":right?"flex-end":"flex-start"}});
+  if(left) d.appendChild(btn({className:"btn-l",onclick:function(){goStep(state.step-1)}},"← Anterior"));
+  if(right) d.appendChild(btn({className:"btn-r",onclick:function(){goStep(state.step+1)}},rightLabel));
+  return d;
+}
+
+function fieldBlock(labelText,inputEl){
+  return div({className:"field"},[el("label",{},labelText),inputEl]);
+}
+
+function renderS0(){
+  var fName=inp({placeholder:"Como te chamam...",value:state.name,oninput:function(){state.name=this.value}});
+  var fInsect=inp({placeholder:"Libelula, Escorpiao, Formiga...",value:state.insect,oninput:function(){state.insect=this.value}});
+  var fOrigin=txt({placeholder:"Quem era voce antes? Como a infeccao aconteceu?",rows:4,style:{resize:"vertical"}});
+  fOrigin.value=state.origin;
+  fOrigin.addEventListener("input",function(){state.origin=this.value});
+  var fMotiv=txt({placeholder:"O que te move? O que ainda tenta preservar?",rows:3,style:{resize:"vertical"}});
+  fMotiv.value=state.motivation;
+  fMotiv.addEventListener("input",function(){state.motivation=this.value});
+
+  var p=div({id:"panel-0"});
+  p.appendChild(secTitle("📋","Identidade do Personagem"));
+  var g=div({className:"grid2"});
+  g.appendChild(fieldBlock("Nome",fName));
+  g.appendChild(fieldBlock("🐛 Inseto do Complex",fInsect));
+  p.appendChild(g);
+  p.appendChild(fieldBlock("Origem / Background",fOrigin));
+  p.appendChild(fieldBlock("🎯 Motivacao",fMotiv));
+  p.appendChild(navRow(false,true));
+  return p;
+}
+
+function renderS1(){
+  var p=div({id:"panel-1"});
+  p.appendChild(secTitle("📊","Atributos"));
+
+  var rp=remPts();
+  var sp=spentPts();
+  var ptsBadge=div({style:{padding:"8px 14px",border:"1px solid "+(rp===0?"#4CAF70":"#F5A623"),borderRadius:"6px",fontSize:"13px",marginBottom:"16px",display:"inline-block"}},[
+    span({style:{color:"#4a6a50"}},"Pontos: "),
+    span({id:"spent-pts",style:{color:"#4CAF70",fontWeight:"bold",fontSize:"20px"}},String(sp)),
+    span({style:{color:"#4a6a50"}}," / 21 · restantes: "),
+    span({id:"rem-pts",style:{color:rp===0?"#4CAF70":"#F5A623",fontWeight:"bold",fontSize:"20px"}},String(rp)),
+    span({style:{color:"#4a6a50"}}," · base 0 · max 7")
+  ]);
+  p.appendChild(ptsBadge);
+
+  var grid=div({className:"grid2"});
+  ATTRS.forEach(function(a){
+    var valSpan=span({id:"av-"+a.key,style:{color:"#c0d0b8",fontWeight:"bold",fontSize:"22px",minWidth:"26px",textAlign:"center"}},String(state.attrs[a.key]));
+    var card=div({className:"card"},[
+      div({style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},[
+        div({style:{display:"flex",alignItems:"center",gap:"8px"}},[
+          span({style:{fontSize:"18px"}},a.emoji),
+          span({style:{color:"#4CAF70",fontWeight:"bold",fontSize:"13px"}},a.abbr),
+          span({style:{color:"#2a4a30",fontSize:"11px"}},a.label)
+        ]),
+        div({style:{display:"flex",alignItems:"center",gap:"8px"}},[
+          btn({className:"btn-sm",onclick:function(){changeAttr(a.key,-1)}},"-"),
+          valSpan,
+          btn({className:"btn-sm",onclick:function(){changeAttr(a.key,1)}},"+")
+        ])
+      ]),
+      span({style:{fontSize:"10px",color:"#2a4a30"}},a.desc)
+    ]);
+    grid.appendChild(card);
+  });
+  p.appendChild(grid);
+
+  var statRow=div({className:"row stat-row",style:{marginTop:"14px",gap:"12px"}},[
+    div({style:{flex:"1",background:"#0c1610",border:"1px solid #F4433633",borderRadius:"8px",padding:"12px 16px",display:"flex",alignItems:"center",gap:"14px"}},[
+      span({style:{fontSize:"24px"}},"❤️"),
+      span({id:"hp-val",style:{color:"#F44336",fontWeight:"bold",fontSize:"30px"}},String(hp())),
+      div({},[div({style:{color:"#F44336",fontWeight:"bold",fontSize:"12px"}},"HP"),div({style:{color:"#2a4a30",fontSize:"10px"}},"10 + RES×2")])
+    ]),
+    div({style:{flex:"1",background:"#0c1610",border:"1px solid #2196F333",borderRadius:"8px",padding:"12px 16px",display:"flex",alignItems:"center",gap:"14px"}},[
+      span({style:{fontSize:"24px"}},"🛡️"),
+      span({id:"ac-val",style:{color:"#2196F3",fontWeight:"bold",fontSize:"30px"}},String(ac())),
+      div({},[div({style:{color:"#2196F3",fontWeight:"bold",fontSize:"12px"}},"AC"),div({style:{color:"#2a4a30",fontSize:"10px"}},"8 + AGI")])
+    ])
+  ]);
+  p.appendChild(statRow);
+  p.appendChild(navRow(true,true));
+  return p;
+}
+
+function renderS2(){
+  var p=div({id:"panel-2"});
+  p.appendChild(secTitle("🐛","Insecta Complex — "+(state.insect||"?")));
+
+  var rc=remCx();
+  var topRow=div({className:"row",style:{marginBottom:"14px",gap:"10px"}},[
+    div({style:{padding:"8px 14px",border:"1px solid "+(rc>=0?"#4CAF70":"#F44336"),borderRadius:"6px",fontSize:"13px"}},[
+      span({style:{color:"#4a6a50"}},"Pontos: "),
+      span({id:"rem-cx",style:{color:rc>=0?"#4CAF70":"#F44336",fontWeight:"bold",fontSize:"20px"}},String(rc)),
+      span({style:{color:"#4a6a50"}}," / "+cxPts())
+    ]),
+    div({className:"row",style:{gap:"8px"}},[
+      span({style:{color:"#4a6a50",fontSize:"11px"}},"Fraquezas extras (+1pt, max +2):"),
+      btn({className:"btn-sm",onclick:function(){changeExtraWeak(-1)}},"-"),
+      span({id:"ew-val",style:{color:"#F5A623",fontWeight:"bold",fontSize:"18px"}},String(state.extraWeak)),
+      btn({className:"btn-sm",onclick:function(){changeExtraWeak(1)}},"+")
+    ])
+  ]);
+  p.appendChild(topRow);
+
+  var legend=div({style:{fontSize:"10px",color:"#2a4a30",marginBottom:"12px",lineHeight:"1.7"}});
+  ABTYPES.forEach(function(t){
+    var s=span({},"  ");
+    var sc=span({style:{color:t.color}},t.badge);
+    var sl=span({}," "+t.label+" = "+t.cost+"pt"+(t.ins>0?" · +"+t.ins+" Ins.":""));
+    legend.appendChild(sc);legend.appendChild(sl);legend.appendChild(s);
+  });
+  p.appendChild(legend);
+
+  var abList=div({id:"ability-list"});
+  state.abilities.forEach(function(ab,i){abList.appendChild(renderAbility(ab,i))});
+  p.appendChild(abList);
+
+  if(state.abilities.length<6){
+    var addBtn=btn({
+      id:"add-ab",
+      style:{width:"100%",background:"transparent",border:"1px dashed #1a2e1e",color:"#2a4a30",borderRadius:"8px",padding:"12px",fontSize:"13px",marginTop:"4px"},
+      onclick:function(){state.abilities.push({name:"",type:"passiva",desc:"",weakness:""});refreshCx()},
+      onmouseover:function(){this.style.borderColor="#4CAF70";this.style.color="#4CAF70"},
+      onmouseout:function(){this.style.borderColor="#1a2e1e";this.style.color="#2a4a30"}
+    },"+ Adicionar Habilidade");
+    p.appendChild(addBtn);
+  }
+  p.appendChild(navRow(true,true));
+  return p;
+}
+
+function renderAbility(ab,i){
+  var t=ABTYPES.find(function(t){return t.value===ab.type})||ABTYPES[0];
+  var nameInp=inp({placeholder:"Nome da habilidade...",value:ab.name,oninput:function(){state.abilities[i].name=this.value}});
+  nameInp.style.flex="1";nameInp.style.minWidth="120px";nameInp.style.width="auto";
+  var typeSel=sel({onchange:function(){state.abilities[i].type=this.value;refreshCx()},style:{width:"160px"}},
+    ABTYPES.map(function(t){return{v:t.value,label:t.label+" ("+t.cost+"pt)"}}),ab.type);
+  var descInp=inp({placeholder:"Descricao da habilidade...",value:ab.desc,oninput:function(){state.abilities[i].desc=this.value},style:{marginBottom:"8px"}});
+  var weakInp=inp({placeholder:"Limitacao obrigatoria...",value:ab.weakness,oninput:function(){state.abilities[i].weakness=this.value},style:{flex:"1"}});
+  weakInp.style.minWidth="100px";
+
+  var card=div({className:"card",style:{borderLeft:"3px solid "+t.color}});
+  var row1=div({style:{display:"flex",gap:"8px",marginBottom:"8px",flexWrap:"wrap",alignItems:"center"}});
+  row1.appendChild(span({style:{background:t.color+"22",color:t.color,borderRadius:"4px",padding:"2px 8px",fontSize:"11px",fontWeight:"bold",whiteSpace:"nowrap"}},t.badge+" "+t.label));
+  row1.appendChild(nameInp);
+  row1.appendChild(typeSel);
+  row1.appendChild(btn({className:"btn-danger",onclick:function(){state.abilities.splice(i,1);refreshCx()}},"x"));
+  card.appendChild(row1);
+  card.appendChild(descInp);
+  var wRow=div({style:{display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}});
+  wRow.appendChild(span({style:{color:"#F5A623",fontSize:"11px",whiteSpace:"nowrap"}},"⚠️ Fraqueza:"));
+  wRow.appendChild(weakInp);
+  card.appendChild(wRow);
+  return card;
+}
+
+function renderS3(){
+  var p=div({id:"panel-3"});
+  p.appendChild(secTitle("🎒","Itens e Adaptacoes"));
+  p.appendChild(span({style:{fontSize:"11px",color:"#2a4a30",display:"block",marginBottom:"16px"}},"Maximo 2 itens equipados. Cada item deve fazer sentido com o seu Complex."));
+
+  [0,1].forEach(function(i){
+    var nameInp=inp({placeholder:"Nome do item...",value:state.items[i].name,oninput:function(){state.items[i].name=this.value},style:{flex:"1",minWidth:"140px",width:"auto"}});
+    var tierSel=sel({onchange:function(){state.items[i].tier=this.value},style:{width:"230px"}},
+      TIERS.map(function(t){return{v:t.v,label:t.label}}),state.items[i].tier);
+    var descInp=inp({placeholder:"Como este item se relaciona com o seu Complex?",value:state.items[i].desc,oninput:function(){state.items[i].desc=this.value}});
+    var card=div({className:"card"});
+    card.appendChild(div({style:{color:"#4CAF70",fontSize:"11px",marginBottom:"10px",letterSpacing:"1px"}},"SLOT "+(i+1)));
+    var row=div({style:{display:"flex",gap:"8px",marginBottom:"8px",flexWrap:"wrap",alignItems:"center"}});
+    row.appendChild(nameInp);row.appendChild(tierSel);
+    card.appendChild(row);card.appendChild(descInp);
+    p.appendChild(card);
+  });
+  p.appendChild(navRow(true,true,"Ver Ficha →"));
+  return p;
+}
+
+function renderS4(){
+  var p=div({id:"panel-4"});
+  p.appendChild(secTitle("📤","Ficha para o Discord"));
+
+  var insValSpan=span({style:{color:insColor(),fontWeight:"bold",minWidth:"28px",textAlign:"center"}},String(state.insanity));
+  var insLblSpan=span({style:{color:insColor(),fontSize:"11px"}},"("+insLabel()+")");
+
+  var topRow=div({className:"row",style:{marginBottom:"14px",gap:"10px"}},[
+    div({style:{background:"#0c1610",border:"1px solid #F4433633",borderRadius:"6px",padding:"8px 14px",display:"flex",alignItems:"center",gap:"8px"}},[
+      span({},"❤️"),span({style:{color:"#4a6a50",fontSize:"12px"}},"HP:"),
+      span({style:{color:"#F44336",fontWeight:"bold"}},hp()+"/"+hp())
+    ]),
+    div({style:{background:"#0c1610",border:"1px solid #2196F333",borderRadius:"6px",padding:"8px 14px",display:"flex",alignItems:"center",gap:"8px"}},[
+      span({},"🛡️"),span({style:{color:"#4a6a50",fontSize:"12px"}},"AC:"),
+      span({style:{color:"#2196F3",fontWeight:"bold"}},String(ac()))
+    ]),
+    div({style:{background:"#0c1610",border:"1px solid #1a2e1e",borderRadius:"6px",padding:"8px 14px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}},[
+      span({},"🧠"),
+      span({style:{color:"#4a6a50",fontSize:"12px"}},"Insanidade:"),
+      btn({className:"btn-sm",onclick:function(){state.insanity=Math.max(0,state.insanity-5);updateIns(insValSpan,insLblSpan,outArea)}},"-"),
+      insValSpan,
+      btn({className:"btn-sm",onclick:function(){state.insanity=Math.min(100,state.insanity+5);updateIns(insValSpan,insLblSpan,outArea)}},"+"),
+      insLblSpan
+    ])
+  ]);
+  p.appendChild(topRow);
+
+  var outArea=txt({rows:24,style:{lineHeight:"1.8",color:"#8aaa84",fontSize:"12px",resize:"vertical",padding:"16px"}});
+  outArea.readOnly=true;
+  outArea.value=genDiscord();
+  p.appendChild(outArea);
+
+  var copyBtn=btn({
+    style:{flex:"1",background:"#1a2e1e",border:"1px solid #4CAF70",color:"#4CAF70",padding:"14px",borderRadius:"8px",fontSize:"14px",fontWeight:"bold",letterSpacing:"1px"},
+    onclick:function(){
+      navigator.clipboard.writeText(outArea.value).then(function(){
+        copyBtn.textContent="✓ COPIADO!";copyBtn.style.background="#1a3a1a";
+        setTimeout(function(){copyBtn.textContent="📋 COPIAR PARA O DISCORD";copyBtn.style.background="#1a2e1e"},2000);
+      });
+    }
+  },"📋 COPIAR PARA O DISCORD");
+
+  var btRow=div({style:{display:"flex",gap:"10px",marginTop:"12px"}},[
+    copyBtn,
+    btn({style:{background:"transparent",border:"1px solid #1a2e1e",color:"#4a6a50",padding:"14px 20px",borderRadius:"8px",fontSize:"12px"},onclick:function(){goStep(0)}},"← Editar")
+  ]);
+  p.appendChild(btRow);
+  p.appendChild(div({style:{marginTop:"10px",fontSize:"10px",color:"#1a2e1e",textAlign:"center"}},"Cole no Discord. A formatacao e aplicada automaticamente."));
+  return p;
+}
+
+function updateIns(valSpan,lblSpan,outArea){
+  var ic=insColor(),il=insLabel();
+  valSpan.textContent=String(state.insanity);valSpan.style.color=ic;
+  lblSpan.textContent="("+il+")";lblSpan.style.color=ic;
+  outArea.value=genDiscord();
+}
+
+function changeAttr(key,d){
+  var nv=state.attrs[key]+d;
+  if(nv<0||nv>7)return;
+  if(d>0&&remPts()<=0)return;
+  state.attrs[key]=nv;
+  var vs=document.getElementById("av-"+key);if(vs)vs.textContent=String(nv);
+  var rp=remPts();
+  var sp=spentPts();
+  var sEl=document.getElementById("spent-pts");if(sEl)sEl.textContent=String(sp);
+  var rEl=document.getElementById("rem-pts");if(rEl){rEl.textContent=String(rp);rEl.style.color=rp===0?"#4CAF70":"#F5A623";}
+  var hEl=document.getElementById("hp-val");if(hEl)hEl.textContent=String(hp());
+  var aEl=document.getElementById("ac-val");if(aEl)aEl.textContent=String(ac());
+}
+
+function changeExtraWeak(d){
+  state.extraWeak=Math.max(0,Math.min(2,state.extraWeak+d));
+  refreshCx();
+}
+
+function refreshCx(){
+  var rc=remCx();
+  var rEl=document.getElementById("rem-cx");
+  if(rEl){rEl.textContent=String(rc);rEl.style.color=rc>=0?"#4CAF70":"#F44336";}
+  var ewEl=document.getElementById("ew-val");
+  if(ewEl)ewEl.textContent=String(state.extraWeak);
+  var list=document.getElementById("ability-list");
+  if(list){list.innerHTML="";state.abilities.forEach(function(ab,i){list.appendChild(renderAbility(ab,i))});}
+  var addB=document.getElementById("add-ab");
+  if(addB)addB.style.display=state.abilities.length>=6?"none":"block";
+}
+
+function goStep(n){
+  if(n<0||n>4)return;
+  state.step=n;
+  render();
+  window.scrollTo(0,0);
+}
+
+function genDiscord(){
+  var attrBlock=ATTRS.map(function(a){return a.emoji+" **"+a.abbr+"** `"+state.attrs[a.key]+"`"}).join("  ");
+  var absBlock=state.abilities.length===0?"> *Nenhuma habilidade registrada.*"
+    :state.abilities.map(function(ab){
+      var t=ABTYPES.find(function(t){return t.value===ab.type});
+      var ins=t&&t.ins>0?"🌑 `+"+t.ins+" Insanidade`":"✨ `Sem custo`";
+      return "> 🔹 **"+(ab.name||"Sem nome")+"**  •  *"+t?.label+"*  •  "+ins+"
+> "+(ab.desc||"*Sem descricao.*")+"
+> ⚠️ *Fraqueza:* "+(ab.weakness||"*Nao definida.*");
+    }).join("
+> ─────────────────
+");
+  var ai=state.items.filter(function(it){return it.name.trim()});
+  var itemsBlock=ai.length===0?"> *Nenhum item equipado.*"
+    :ai.map(function(it){return "> 🔸 **"+it.name+"**  •  Tier "+it.tier+" — *"+TNAME[it.tier]+"*  •  `"+TBONUS[it.tier]+"`
+> "+(it.desc||"*Sem descricao.*")}).join("
+> ─────────────────
+");
+  var bar="█".repeat(Math.floor(state.insanity/10))+"░".repeat(10-Math.floor(state.insanity/10));
+  return "╬══════════════════════════════╬
+║  🦟  JUNGLE JUICE RPG            ║
+║  FICHA DE PERSONAGEM         ║
+╬══════════════════════════════╬
+
+🧑 **"+(state.name||"Sem Nome")+"**
+🐛 *Inseto:* "+(state.insect||"*nao definido*")+"   ·   🏠 *Faccao:* **NEST**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊  **A T R I B U T O S**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"+attrBlock+"
+
+❤️ **HP** `"+hp()+"/"+hp()+"`   🛡️ **AC** `"+ac()+"`
+
+🧠 **Insanidade** `"+state.insanity+"/100`  •  *"+insLabel()+"*
+`"+bar+"`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🐛  **I N S E C T A   C O M P L E X**
+*"+(state.insect||"?")+"*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"+absBlock+"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎒  **I T E N S**   *(max. 2)*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"+itemsBlock+"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📖  **O R I G E M**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> "+(state.origin||"*Nao definida.*")+"
+> 🎯 *Motivacao:* "+(state.motivation||"*Nao definida.*");
+}
+
+render();
+</script>
+</body>
+</html>

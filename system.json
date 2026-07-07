@@ -2,7 +2,7 @@
   "id": "jungle-juice",
   "title": "Jungle Juice RPG",
   "description": "Sistema de mesa para Jungle Juice RPG — horror, suspense e Insecta Complex. Compatível com Foundry VTT v14.364.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "compatibility": {
     "minimum": "14",
     "verified": "14.364"
@@ -21,6 +21,29 @@
       "lang": "pt-BR",
       "name": "Português (Brasil)",
       "path": "lang/pt-BR.json"
+    }
+  ],
+  "packs": [
+    {
+      "name": "faccoes",
+      "label": "Facções",
+      "path": "packs/faccoes",
+      "type": "JournalEntry",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "npcs",
+      "label": "NPCs",
+      "path": "packs/npcs",
+      "type": "Actor",
+      "system": "jungle-juice",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
     }
   ],
   "documentTypes": {

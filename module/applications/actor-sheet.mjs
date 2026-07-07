@@ -5,8 +5,22 @@ import {
   ATTRIBUTE_POINTS,
   MAX_ATTRIBUTE_AT_CREATION,
   MAX_ABILITIES,
+  CONDITIONS,
+  FACTION_NAMES,
 } from "../config.mjs";
-import { rollTest, rollAttack, rollInitiative, rollDyingSave, useAbility } from "../dice.mjs";
+import {
+  rollTest,
+  rollAttack,
+  rollInitiative,
+  rollDyingSave,
+  useAbility,
+  applyAbilityInsanity,
+  rollDamage,
+  applyDamage,
+} from "../dice.mjs";
+import { toggleCondition } from "../conditions.mjs";
+import { unlockRunaway, activateRunaway, exitRunaway, sendHallucination } from "../insanity.mjs";
+import { useHealingItem, shortRest, longRest } from "../healing.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -29,6 +43,14 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       addAbility: JungleJuiceActorSheet.#onAddAbility,
       removeAbility: JungleJuiceActorSheet.#onRemoveAbility,
       useAbility: JungleJuiceActorSheet.#onUseAbility,
+      toggleCondition: JungleJuiceActorSheet.#onToggleCondition,
+      unlockRunaway: JungleJuiceActorSheet.#onUnlockRunaway,
+      activateRunaway: JungleJuiceActorSheet.#onActivateRunaway,
+      exitRunaway: JungleJuiceActorSheet.#onExitRunaway,
+      sendHallucination: JungleJuiceActorSheet.#onSendHallucination,
+      useHealingItem: JungleJuiceActorSheet.#onUseHealingItem,
+      shortRest: JungleJuiceActorSheet.#onShortRest,
+      longRest: JungleJuiceActorSheet.#onLongRest,
     },
   };
 
@@ -51,8 +73,11 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       itemTiers: ITEM_TIERS,
       attributePoints: ATTRIBUTE_POINTS,
       maxAttribute: MAX_ATTRIBUTE_AT_CREATION,
+      factionNames: FACTION_NAMES,
     };
 
+    context.actor = this.actor;
+    context.document = this.document;
     context.system = system;
     context.isCharacter = this.actor.type === "character";
     context.activeTab = this.tabGroups?.primary ?? "identity";
@@ -71,7 +96,35 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     context.abilityPointsTotal = system.complexPointsTotal ?? 5;
     context.abilityPointsRemaining = context.abilityPointsTotal - context.abilityPointsUsed;
 
+    context.conditions = CONDITIONS.map((c) => ({
+      ...c,
+      active: this.actor.statuses.has(c.id),
+    }));
+
+    context.isGM = game.user.isGM;
+    context.canHallucinate = system.canHallucinate ?? false;
+    context.canRunaway = system.canRunaway ?? false;
+    context.isCollapse = system.isCollapse ?? false;
+    context.runawayUnlocked = system.runaway?.unlocked ?? false;
+    context.runawayActive = system.runaway?.active ?? false;
+
     return context;
+  }
+
+  /**
+   * Impede que submits automáticos sobrescrevam o nome do documento com um
+   * valor vazio/indefinido, e remove quaisquer leaves `undefined`.
+   * @override
+   */
+  _prepareSubmitData(event, form, formData, ...rest) {
+    const obj = formData.object;
+    if (obj.name === undefined || obj.name === null || obj.name === "") {
+      delete obj.name;
+    }
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === undefined) delete obj[key];
+    }
+    return super._prepareSubmitData(event, form, formData, ...rest);
   }
 
   /** @override */
@@ -168,6 +221,15 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     const presetAttr = target.dataset.attr;
     const abilities = sheet.actor.system.abilities ?? [];
 
+    // Alvo selecionado (targeting) do usuário atual.
+    const targetTokens = Array.from(game.user.targets);
+    const targetActor = targetTokens[0]?.actor ?? null;
+    const targetAc = targetActor?.system.ac.value ?? null;
+
+    if (targetTokens.length > 1) {
+      ui.notifications.info("Múltiplos alvos selecionados — usando o primeiro.");
+    }
+
     const attrOptions = Object.entries(ATTRIBUTES)
       .map(
         ([key, info]) =>
@@ -184,15 +246,19 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       })
       .join("");
 
+    const targetBlock = targetActor
+      ? `<p class="jj-target">🎯 Alvo: <strong>${targetActor.name}</strong> (AC ${targetAc} · HP ${targetActor.system.hp.value}/${targetActor.system.hp.max})</p>`
+      : `<div class="form-group">
+           <label>AC do alvo <em>(nenhum alvo selecionado)</em></label>
+           <input type="number" name="ac" value="12"/>
+         </div>`;
+
     const content = `
       <div class="jj-attack-dialog">
+        ${targetBlock}
         <div class="form-group">
           <label>Atributo do ataque</label>
           <select name="attr">${attrOptions}</select>
-        </div>
-        <div class="form-group">
-          <label>AC do alvo</label>
-          <input type="number" name="ac" value="12"/>
         </div>
         <div class="form-group">
           <label>Usar habilidade do Complex?</label>
@@ -200,6 +266,10 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
             <option value="-1">Nenhuma (ataque comum)</option>
             ${abilityOptions}
           </select>
+        </div>
+        <div class="form-group">
+          <label>Dano (opcional — usado se não houver dado na habilidade)</label>
+          <input type="text" name="damage" placeholder="ex: 1d6 + 2"/>
         </div>
       </div>`;
 
@@ -221,13 +291,41 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     if (!data) return;
 
     const attrKey = data.attr ?? presetAttr;
-    const ac = Number(data.ac ?? 12);
+    const ac = targetActor ? targetAc : Number(data.ac ?? 12);
     const abilityIndex = Number(data.ability ?? -1);
+    const ability = abilityIndex >= 0 ? abilities[abilityIndex] : null;
 
-    await rollAttack({ actor: sheet.actor, attrKey, ac });
+    // Rola o ataque contra o AC do alvo.
+    const { hit, natural20 } = await rollAttack({ actor: sheet.actor, attrKey, ac });
 
-    if (abilityIndex >= 0) {
-      await useAbility({ actor: sheet.actor, index: abilityIndex });
+    // Custo de insanidade da habilidade, se houver.
+    if (ability) await applyAbilityInsanity(sheet.actor, ability);
+
+    if (!hit) return;
+
+    // Determina a fórmula de dano: dado da habilidade ou campo manual.
+    const damageFormula =
+      (ability?.damage?.trim() || data.damage?.trim() || "").trim();
+
+    if (!damageFormula || !Roll.validate(damageFormula)) return;
+
+    const label = ability?.name?.trim() || "Ataque";
+    const damage = await rollDamage(sheet.actor, damageFormula, label);
+
+    if (targetActor) {
+      if (targetActor.isOwner) {
+        const newHp = await applyDamage(targetActor, damage);
+        await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor: sheet.actor }),
+          content: `<div class="jungle-juice-card"><p>💥 <strong>${damage}</strong> de dano em <strong>${targetActor.name}</strong>${natural20 ? " (Natural 20!)" : ""} → HP ${newHp}/${targetActor.system.hp.max}</p></div>`,
+        });
+      } else {
+        // Sem permissão para alterar o alvo: registra para o Mestre aplicar.
+        await ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor: sheet.actor }),
+          content: `<div class="jungle-juice-card"><p>💥 <strong>${damage}</strong> de dano em <strong>${targetActor.name}</strong>${natural20 ? " (Natural 20!)" : ""} — <em>aguardando o Mestre aplicar (sem permissão).</em></p></div>`,
+        });
+      }
     }
   }
 
@@ -269,5 +367,63 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
   static async #onUseAbility(event, target) {
     const index = Number(target.dataset.index);
     await useAbility({ actor: this.actor, index });
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onToggleCondition(event, target) {
+    const conditionId = target.dataset.condition;
+    await toggleCondition(this.actor, conditionId);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onUnlockRunaway() {
+    await unlockRunaway(this.actor);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onActivateRunaway() {
+    await activateRunaway(this.actor);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onExitRunaway() {
+    await exitRunaway(this.actor);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onSendHallucination() {
+    const text = await foundry.applications.api.DialogV2.prompt({
+      window: { title: "Enviar alucinação" },
+      content: `<textarea name="text" rows="4" style="width:100%" placeholder="Descreva o que o personagem vê/ouve/sente..."></textarea>`,
+      ok: {
+        label: "Enviar",
+        callback: (ev, button) => new foundry.applications.ux.FormDataExtended(button.form).object.text,
+      },
+      rejectClose: false,
+    });
+    if (text) await sendHallucination(this.actor, text);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onUseHealingItem(event, target) {
+    const index = Number(target.dataset.index);
+    await useHealingItem(this.actor, index);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onShortRest() {
+    await shortRest(this.actor);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onLongRest() {
+    await longRest(this.actor);
+    this.render(false);
   }
 }

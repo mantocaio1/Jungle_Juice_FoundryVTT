@@ -4,3 +4,9 @@ Thumbs.db
 node_modules/
 dist/
 *.zip
+
+# Compendium LevelDB (populated em runtime pelo Foundry)
+packs/faccoes/*
+!packs/faccoes/.gitkeep
+packs/npcs/*
+!packs/npcs/.gitkeep

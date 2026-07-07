@@ -44,7 +44,11 @@
       </div>
       <div class="field">
         <label>Facção</label>
-        <input type="text" name="system.faction" value="{{system.faction}}"/>
+        <select name="system.faction">
+          {{#each config.factionNames as |name|}}
+          <option value="{{name}}" {{#if (eq ../system.faction name)}}selected{{/if}}>{{name}}</option>
+          {{/each}}
+        </select>
       </div>
     </div>
     <div class="field">
@@ -120,6 +124,7 @@
           <option value="{{tierKey}}" {{#if (eq item.tier tierKey)}}selected{{/if}}>Tier {{tierKey}} — {{tier.label}} ({{tier.bonus}})</option>
           {{/each}}
         </select>
+        <button type="button" class="btn-heal" data-action="useHealingItem" data-index="{{index}}" title="Usar como cura (dado do tier)">💊</button>
       </div>
       <input type="text" data-it-field="desc" value="{{item.desc}}" placeholder="Como se relaciona com o Complex?"/>
     </div>
@@ -143,6 +148,52 @@
       <button type="button" data-action="rollInit">Iniciativa (D20 + AGI)</button>
       {{#if system.dying}}
       <button type="button" data-action="rollDying" class="danger">Rolar Sobrevivência (Morrendo)</button>
+      {{/if}}
+    </div>
+
+    <h3>Cura &amp; Descanso</h3>
+    <div class="roll-grid">
+      <button type="button" data-action="shortRest">🛏️ Descanso Curto (+RES HP, −5 Ins)</button>
+      <button type="button" data-action="longRest">🌙 Descanso Longo (HP cheio, −15 Ins)</button>
+    </div>
+    <p class="hint">Itens de cura: use o botão 💊 na aba Itens (rola 1d4/1d6/1d8 conforme o tier).</p>
+
+    <h3>Condições</h3>
+    <div class="conditions-grid">
+      {{#each conditions as |cond|}}
+      <button type="button" class="condition-toggle {{#if cond.active}}active{{/if}}" data-action="toggleCondition" data-condition="{{cond.id}}" title="{{cond.hint}}">
+        {{cond.name}}
+      </button>
+      {{/each}}
+    </div>
+
+    <h3>Insanidade &amp; Runaway</h3>
+    <div class="runaway-box {{#if runawayActive}}is-active{{/if}}">
+      <p class="runaway-status" style="color: {{system.insanityColor}}">
+        {{system.insanity.value}}/100 · {{system.insanityLabel}}
+      </p>
+
+      {{#if canHallucinate}}
+        {{#if isGM}}
+        <button type="button" class="btn-halluc" data-action="sendHallucination">👁️ Enviar alucinação (privado)</button>
+        {{/if}}
+      {{/if}}
+
+      {{#if runawayActive}}
+        <p class="runaway-note">🐛💢 <strong>Complex Runaway ativo</strong> — o inseto assumiu o controle.</p>
+        <button type="button" class="danger" data-action="exitRunaway">Tentar sair (Mente vs CD 14)</button>
+      {{else if canRunaway}}
+        {{#if runawayUnlocked}}
+        <p class="runaway-note">🔓 Runaway desbloqueado pelo Mestre.</p>
+        <button type="button" class="btn-attack" data-action="activateRunaway">🐛 Entrar em Complex Runaway</button>
+        {{else}}
+        <p class="runaway-note locked">🔒 Runaway bloqueado — aguardando desbloqueio do Mestre{{#if isCollapse}} (Colapso!){{/if}}.</p>
+        {{#if isGM}}
+        <button type="button" class="danger" data-action="unlockRunaway">🔓 Desbloquear Runaway</button>
+        {{/if}}
+        {{/if}}
+      {{else}}
+        <p class="hint">O Runaway fica disponível a partir de 75 de Insanidade.</p>
       {{/if}}
     </div>
   </div>

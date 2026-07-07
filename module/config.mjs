@@ -23,10 +23,16 @@ export const ABILITY_TYPES = {
 };
 
 export const ITEM_TIERS = {
-  "1": { label: "Improvisado", bonus: "+1d4" },
-  "2": { label: "Refinado", bonus: "+1d6" },
-  "3": { label: "Especializado", bonus: "+1d8" },
+  "1": { label: "Improvisado", bonus: "+1d4", heal: "1d4" },
+  "2": { label: "Refinado", bonus: "+1d6", heal: "1d6" },
+  "3": { label: "Especializado", bonus: "+1d8", heal: "1d8" },
 };
+
+/** Descanso curto (1h): recupera RES em HP e reduz insanidade. */
+export const SHORT_REST = { hpAttr: "res", insanity: -5, label: "Descanso Curto (1h)" };
+
+/** Descanso longo (8h): HP cheio e redução maior de insanidade. */
+export const LONG_REST = { insanity: -15, label: "Descanso Longo (8h)" };
 
 export const DIFFICULTY = {
   trivial: 4,
@@ -48,6 +54,140 @@ export const BASE_COMPLEX_POINTS = 5;
 export const MAX_EXTRA_WEAKNESSES = 2;
 export const MAX_ABILITIES = 6;
 export const MAX_ITEMS = 2;
+
+export const HALLUCINATION_THRESHOLD = 50;
+export const RUNAWAY_THRESHOLD = 75;
+export const COLLAPSE_VALUE = 100;
+export const RUNAWAY_STATUS_ID = "runaway";
+
+/** Nomes das facções reconhecidas (Guia do Player). */
+export const FACTION_NAMES = [
+  "NEST",
+  "Pet Shop",
+  "Stray Dogs",
+  "Hollow",
+  "The Swarm",
+  "Prometheus",
+  "The Web",
+  "Blackmoth",
+];
+
+export const PHYSICAL_ATTRS = ["for", "agi", "res", "pre"];
+export const MENTAL_ATTRS = ["men", "per"];
+
+/**
+ * Condições de combate (Parte 4). Registradas como status effects do Foundry.
+ * - disadvantage: "all" | "physical" | "mental" | "attack" | null
+ * - perTurnHp: fórmula de dano por turno (string) ou null
+ * - perTurnInsanity: ganho de insanidade por turno (número) ou 0
+ */
+export const CONDITIONS = [
+  {
+    id: "stunned",
+    name: "Atordoado",
+    img: "icons/svg/daze.svg",
+    disadvantage: "all",
+    perTurnHp: null,
+    perTurnInsanity: 0,
+    hint: "Desvantagem em todos os testes. Perde a Ação Livre.",
+  },
+  {
+    id: "poisoned",
+    name: "Envenenado",
+    img: "icons/svg/poison.svg",
+    disadvantage: "physical",
+    perTurnHp: "1d4",
+    perTurnInsanity: 0,
+    hint: "Desvantagem em testes físicos. Perde 1d4 HP por turno.",
+  },
+  {
+    id: "immobilized",
+    name: "Imobilizado",
+    img: "icons/svg/net.svg",
+    disadvantage: null,
+    perTurnHp: null,
+    perTurnInsanity: 0,
+    hint: "Não pode usar Suporte/Movimentação.",
+  },
+  {
+    id: "bleeding",
+    name: "Sangrando",
+    img: "icons/svg/blood.svg",
+    disadvantage: null,
+    perTurnHp: "1d4",
+    perTurnInsanity: 0,
+    hint: "Perde 1d4 HP no início de cada turno.",
+  },
+  {
+    id: "hallucinating",
+    name: "Alucinado",
+    img: "icons/svg/stoned.svg",
+    disadvantage: "mental",
+    perTurnHp: null,
+    perTurnInsanity: 5,
+    hint: "Desvantagem em Mente e Percepção. +5 Insanidade por turno.",
+  },
+  {
+    id: "blinded",
+    name: "Cego",
+    img: "icons/svg/blind.svg",
+    disadvantage: "attack",
+    perTurnHp: null,
+    perTurnInsanity: 0,
+    hint: "Desvantagem em ataques.",
+  },
+  {
+    id: "deafened",
+    name: "Surdo",
+    img: "icons/svg/deaf.svg",
+    disadvantage: null,
+    perTurnHp: null,
+    perTurnInsanity: 0,
+    hint: "Falha automática em Percepção auditiva.",
+  },
+  {
+    id: "burning",
+    name: "Queimando",
+    img: "icons/svg/fire.svg",
+    disadvantage: null,
+    perTurnHp: "1d6",
+    perTurnInsanity: 0,
+    hint: "1d6 de dano por turno. CD 12 de Agilidade para apagar.",
+  },
+];
+
+/** @param {string} id */
+export function getCondition(id) {
+  return CONDITIONS.find((c) => c.id === id);
+}
+
+/**
+ * Determina se um teste com dado atributo sofre desvantagem, dadas as
+ * condições ativas de um ator.
+ * @param {Set<string>} statuses IDs de status ativos (actor.statuses)
+ * @param {string} attrKey
+ * @param {boolean} [isAttack]
+ * @returns {boolean}
+ */
+export function hasDisadvantage(statuses, attrKey, isAttack = false) {
+  for (const condition of CONDITIONS) {
+    if (!statuses.has(condition.id)) continue;
+    switch (condition.disadvantage) {
+      case "all":
+        return true;
+      case "physical":
+        if (PHYSICAL_ATTRS.includes(attrKey)) return true;
+        break;
+      case "mental":
+        if (MENTAL_ATTRS.includes(attrKey)) return true;
+        break;
+      case "attack":
+        if (isAttack) return true;
+        break;
+    }
+  }
+  return false;
+}
 
 /** @param {number} value */
 export function getInsanityState(value) {

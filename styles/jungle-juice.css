@@ -278,14 +278,93 @@
   padding: 10px 24px;
 }
 
+.jungle-juice.sheet.actor .conditions-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.jungle-juice.sheet.actor .condition-toggle {
+  background: transparent;
+  border: 1px solid var(--jj-border);
+  color: var(--jj-muted);
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.jungle-juice.sheet.actor .condition-toggle.active {
+  background: var(--jj-border);
+  border-color: var(--jj-hp);
+  color: var(--jj-hp);
+  font-weight: bold;
+}
+
+.jungle-juice.sheet.actor .runaway-box {
+  border: 1px solid var(--jj-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jungle-juice.sheet.actor .runaway-box.is-active {
+  border-color: var(--jj-hp);
+  box-shadow: 0 0 8px rgba(200, 40, 40, 0.4);
+}
+
+.jungle-juice.sheet.actor .runaway-status {
+  font-weight: bold;
+  margin: 0;
+}
+
+.jungle-juice.sheet.actor .runaway-note {
+  margin: 0;
+  font-size: 13px;
+}
+
+.jungle-juice.sheet.actor .runaway-note.locked {
+  color: var(--jj-muted);
+}
+
+.jungle-juice.sheet.actor .btn-halluc {
+  align-self: flex-start;
+}
+
+.jj-hallucination {
+  border-left: 3px solid #7a3fb0;
+}
+
 .jj-attack-dialog .form-group {
   margin-bottom: 10px;
+}
+
+.jj-attack-dialog .jj-target {
+  padding: 8px 10px;
+  border: 1px solid #4CAF70;
+  border-radius: 6px;
+  margin-bottom: 12px;
 }
 
 .jj-attack-dialog label {
   display: block;
   margin-bottom: 4px;
   font-size: 12px;
+}
+
+.jungle-juice.sheet.actor .btn-heal {
+  background: transparent;
+  border: 1px solid #4CAF70;
+  color: #4CAF70;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
 }
 
 .jungle-juice.sheet.actor .btn-use {

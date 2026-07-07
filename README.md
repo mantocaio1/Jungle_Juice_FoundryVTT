@@ -35,7 +35,7 @@ Cole esta URL na tela de instalação de sistemas do Foundry:
 https://raw.githubusercontent.com/mantocaio1/jungle_juice_foundryvtt/main/system.json
 ```
 
-## Regras implementadas (v0.1.0 — MVP)
+## Regras implementadas (v0.2.0)
 
 ### Atributos (customização)
 
@@ -56,6 +56,35 @@ https://raw.githubusercontent.com/mantocaio1/jungle_juice_foundryvtt/main/system
 - Iniciativa: `D20 + AGI`
 - Estado Morrendo: rolagem de sobrevivência `D20` (≤10 perde 1 HP)
 
+### Cura & Descanso
+
+- **Item de cura (💊):** rola o dado do tier — Tier 1 `1d4`, Tier 2 `1d6`, Tier 3 `1d8`
+- **Descanso Curto (1h):** recupera **RES** em HP e **−5** Insanidade
+- **Descanso Longo (8h):** HP ao máximo e **−15** Insanidade
+
+### Compêndios
+
+Dois compêndios são populados automaticamente na **primeira carga do mundo** (GM):
+
+| Compêndio | Tipo | Conteúdo |
+|-----------|------|----------|
+| **Facções** | Journal | 8 facções com lore do Guia do Player (NEST, Pet Shop, Stray Dogs, Hollow, The Swarm, Prometheus, The Web, Blackmoth) |
+| **NPCs** | Actor | 10 NPCs pré-prontos — um representante por facção + Infectado em Colapso |
+
+Arraste NPCs do compêndio para a cena ou crie cópias na aba Atores. Jogadores têm acesso de leitura às facções.
+
+### Ficha standalone (Discord)
+
+A pasta [`ficha/`](ficha/) contém o criador de ficha fora do Foundry, alinhado com as mesmas regras:
+
+- Atributos **base 0**, **21 pontos** totais, máx **7** por atributo
+- Exportação formatada para Discord
+
+| Arquivo | Uso |
+|---------|-----|
+| `ficha/JungleJuice_Ficha.html` | Abrir no navegador (sem dependências) |
+| `ficha/JungleJuice_FichaCreator.jsx` | Componente React (mesma lógica) |
+
 ## Estrutura do projeto
 
 ```
@@ -65,12 +94,19 @@ jungle_juice_foundryvtt/     ← repositório Git
     ├── jungle-juice.mjs
     ├── module/
     │   ├── config.mjs
-    │   ├── data/character-model.mjs
+    │   ├── data/
+    │   │   ├── character-model.mjs
+    │   │   ├── factions.mjs
+    │   │   └── npcs.mjs
+    │   ├── compendiums.mjs
+    │   ├── healing.mjs
     │   ├── dice.mjs
     │   ├── documents.mjs
     │   └── applications/actor-sheet.mjs
     ├── templates/actor-sheet.hbs
     ├── styles/jungle-juice.css
+    ├── packs/                 # Compêndios (Facções + NPCs)
+    ├── ficha/                 # Criador de ficha standalone (HTML + React)
     └── lang/pt-BR.json
 ```
 
@@ -79,10 +115,11 @@ jungle_juice_foundryvtt/     ← repositório Git
 - [x] Esqueleto do sistema (v14 TypeDataModel)
 - [x] Ficha de personagem básica
 - [x] Rolagens D20, iniciativa, sobrevivência
-- [ ] Condições de combate automatizadas
-- [ ] Complex Runaway e alucinações
-- [ ] Compêndios (facções, NPCs)
-- [ ] Sincronizar ficha HTML com regra de atributos base 0
+- [x] Condições de combate automatizadas
+- [x] Complex Runaway e alucinações (GM desbloqueia Runaway ao atingir 100)
+- [x] Compêndios (facções, NPCs)
+- [x] Cura e descanso (itens por tier, descanso curto/longo)
+- [x] Sincronizar ficha HTML com regra de atributos base 0
 
 ## Licença
 

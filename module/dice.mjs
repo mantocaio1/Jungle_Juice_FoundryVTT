@@ -1,4 +1,18 @@
-import { ATTRIBUTES, ABILITY_TYPES, getInsanityState } from "./config.mjs";
+import { ATTRIBUTES, ABILITY_TYPES, getInsanityState, hasDisadvantage } from "./config.mjs";
+
+/**
+ * Monta a fórmula do d20 considerando desvantagem (2d20 mantendo o menor).
+ * @param {Actor} actor
+ * @param {string} attrKey
+ * @param {number} attr valor do atributo
+ * @param {boolean} [isAttack]
+ * @returns {{ formula: string, disadvantage: boolean }}
+ */
+function d20Formula(actor, attrKey, attr, isAttack = false) {
+  const disadvantage = hasDisadvantage(actor.statuses ?? new Set(), attrKey, isAttack);
+  const die = disadvantage ? "2d20kl1" : "1d20";
+  return { formula: `${die} + ${attr}`, disadvantage };
+}
 
 /**
  * @param {object} options
@@ -10,15 +24,16 @@ import { ATTRIBUTES, ABILITY_TYPES, getInsanityState } from "./config.mjs";
 export async function rollTest({ actor, attrKey, target, label }) {
   const attr = actor.system.attributes[attrKey] ?? 0;
   const attrInfo = ATTRIBUTES[attrKey];
-  const roll = await new Roll(`1d20 + ${attr}`).evaluate();
+  const { formula, disadvantage } = d20Formula(actor, attrKey, attr);
+  const roll = await new Roll(formula).evaluate();
   const success = roll.total >= target;
 
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `${label ?? "Teste"} — ${attrInfo?.abbr ?? attrKey.toUpperCase()} vs CD ${target}`,
+    flavor: `${label ?? "Teste"} — ${attrInfo?.abbr ?? attrKey.toUpperCase()} vs CD ${target}${disadvantage ? " · Desvantagem" : ""}`,
   });
 
-  return { roll, success, total: roll.total, target };
+  return { roll, success, total: roll.total, target, disadvantage };
 }
 
 /**
@@ -31,16 +46,19 @@ export async function rollTest({ actor, attrKey, target, label }) {
 export async function rollAttack({ actor, attrKey, ac, label }) {
   const attr = actor.system.attributes[attrKey] ?? 0;
   const attrInfo = ATTRIBUTES[attrKey];
-  const roll = await new Roll(`1d20 + ${attr}`).evaluate();
-  const natural20 = roll.dice[0]?.results?.[0]?.result === 20;
+  const { formula, disadvantage } = d20Formula(actor, attrKey, attr, true);
+  const roll = await new Roll(formula).evaluate();
+  // Com desvantagem, o d20 relevante é o menor mantido (kl1).
+  const d20Results = roll.dice[0]?.results?.filter((r) => r.active) ?? [];
+  const natural20 = d20Results.some((r) => r.result === 20);
   const hit = natural20 || roll.total >= ac;
 
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `${label ?? "Ataque"} — ${attrInfo?.abbr ?? attrKey.toUpperCase()} vs AC ${ac}${natural20 ? " (Natural 20!)" : ""}`,
+    flavor: `${label ?? "Ataque"} — ${attrInfo?.abbr ?? attrKey.toUpperCase()} vs AC ${ac}${natural20 ? " (Natural 20!)" : ""}${disadvantage ? " · Desvantagem" : ""}`,
   });
 
-  return { roll, hit, natural20, total: roll.total, ac };
+  return { roll, hit, natural20, total: roll.total, ac, disadvantage };
 }
 
 /** @param {Actor} actor */
@@ -57,6 +75,51 @@ export async function rollInitiative(actor) {
 }
 
 /**
+ * Aplica o custo de insanidade de uma habilidade ao ator.
+ * @param {Actor} actor
+ * @param {object} ability
+ * @returns {Promise<{ cost: number, newInsanity: number }>}
+ */
+export async function applyAbilityInsanity(actor, ability) {
+  const type = ABILITY_TYPES[ability.type] ?? ABILITY_TYPES.passiva;
+  const cost = type.insanity ?? 0;
+  let newInsanity = actor.system.insanity.value;
+  if (cost > 0) {
+    newInsanity = Math.min(actor.system.insanity.max, newInsanity + cost);
+    await actor.update({ "system.insanity.value": newInsanity });
+  }
+  return { cost, newInsanity };
+}
+
+/**
+ * Rola dano e retorna o total.
+ * @param {Actor} actor
+ * @param {string} formula
+ * @param {string} label
+ * @returns {Promise<number>}
+ */
+export async function rollDamage(actor, formula, label) {
+  const roll = await new Roll(formula).evaluate();
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor: `Dano — ${label}`,
+  });
+  return roll.total;
+}
+
+/**
+ * Aplica dano ao HP de um ator alvo.
+ * @param {Actor} targetActor
+ * @param {number} amount
+ * @returns {Promise<number>} novo HP
+ */
+export async function applyDamage(targetActor, amount) {
+  const newHp = targetActor.system.hp.value - amount;
+  await targetActor.update({ "system.hp.value": newHp });
+  return newHp;
+}
+
+/**
  * Usa uma habilidade do Insecta Complex, aplicando o custo de insanidade
  * conforme o tipo. Habilidades passivas não têm custo.
  * @param {object} options
@@ -68,14 +131,8 @@ export async function useAbility({ actor, index }) {
   if (!ability) return;
 
   const type = ABILITY_TYPES[ability.type] ?? ABILITY_TYPES.passiva;
-  const cost = type.insanity ?? 0;
   const name = ability.name?.trim() || "Habilidade sem nome";
-
-  let newInsanity = actor.system.insanity.value;
-  if (cost > 0) {
-    newInsanity = Math.min(actor.system.insanity.max, newInsanity + cost);
-    await actor.update({ "system.insanity.value": newInsanity });
-  }
+  const { cost, newInsanity } = await applyAbilityInsanity(actor, ability);
 
   const state = getInsanityState(newInsanity);
   const costLine =
@@ -105,11 +162,7 @@ export async function useAbility({ actor, index }) {
 
   // Rola o dano automaticamente se um dado válido foi definido.
   if (ability.damage?.trim() && Roll.validate(ability.damage.trim())) {
-    const roll = await new Roll(ability.damage.trim()).evaluate();
-    await roll.toMessage({
-      speaker: ChatMessage.getSpeaker({ actor }),
-      flavor: `Dano — ${name}`,
-    });
+    await rollDamage(actor, ability.damage.trim(), name);
   }
 
   return { cost, newInsanity };
