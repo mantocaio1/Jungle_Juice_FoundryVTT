@@ -36,6 +36,7 @@ import {
   deleteGearItem,
   itemRollData,
 } from "../items.mjs";
+import { applyFichaToActor, exportFichaJson } from "../import-ficha.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -72,6 +73,8 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       resetTurnActions: JungleJuiceActorSheet.#onResetTurnActions,
       addItem: JungleJuiceActorSheet.#onAddItem,
       removeItem: JungleJuiceActorSheet.#onRemoveItem,
+      importFicha: JungleJuiceActorSheet.#onImportFicha,
+      exportFicha: JungleJuiceActorSheet.#onExportFicha,
     },
   };
 
@@ -524,5 +527,50 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     const itemId = target.dataset.itemId;
     await deleteGearItem(this.actor, itemId);
     this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onImportFicha() {
+    if (!game.user.isGM) return;
+
+    const text = await foundry.applications.api.DialogV2.prompt({
+      window: { title: "Importar ficha JSON" },
+      content: `<textarea name="json" rows="12" style="width:100%;font-family:monospace" placeholder='Cole o JSON exportado pela ficha HTML...'></textarea>`,
+      ok: {
+        label: "Importar",
+        callback: (ev, button) => new foundry.applications.ux.FormDataExtended(button.form).object.json,
+      },
+      rejectClose: false,
+    });
+
+    if (!text?.trim()) return;
+
+    try {
+      await applyFichaToActor(this.actor, text);
+      ui.notifications.info(`Ficha importada: ${this.actor.name}`);
+      this.render(false);
+    } catch (error) {
+      ui.notifications.error(`Importação falhou: ${error.message}`);
+    }
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onExportFicha() {
+    if (!game.user.isGM) return;
+    const json = exportFichaJson(this.actor);
+
+    await foundry.applications.api.DialogV2.wait({
+      window: { title: "Exportar ficha JSON" },
+      content: `<textarea readonly rows="14" style="width:100%;font-family:monospace">${json.replace(/</g, "&lt;")}</textarea>`,
+      buttons: [{ action: "ok", label: "Fechar", default: true }],
+      rejectClose: false,
+    });
+
+    try {
+      await navigator.clipboard.writeText(json);
+      ui.notifications.info("JSON copiado para a área de transferência.");
+    } catch {
+      ui.notifications.info("Selecione e copie o JSON manualmente.");
+    }
   }
 }

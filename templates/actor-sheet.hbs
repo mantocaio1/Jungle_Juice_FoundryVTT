@@ -59,6 +59,13 @@
       <label>Motivação</label>
       {{editor system.motivation target="system.motivation" engine="prosemirror" button=true editable=editable}}
     </div>
+    {{#if isGM}}
+    <div class="ficha-io">
+      <button type="button" data-action="importFicha">📥 Importar JSON da ficha</button>
+      <button type="button" data-action="exportFicha">📤 Exportar JSON</button>
+      <p class="hint">Use a ficha HTML (`ficha/JungleJuice_Ficha.html`) para criar o personagem e cole o JSON aqui.</p>
+    </div>
+    {{/if}}
   </div>
 
   <div class="tab attributes" data-group="primary" data-tab="attributes" {{#unless (eq activeTab "attributes")}}hidden{{/unless}}>

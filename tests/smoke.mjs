@@ -109,7 +109,7 @@ console.log("\n=== Unit tests ===\n");
 
 const unit = spawnSync(
   process.execPath,
-  ["--test", "tests/unit/config.test.mjs", "tests/unit/items.test.mjs", "tests/unit/dice.test.mjs", "tests/unit/combat-actions.test.mjs"],
+  ["--test", "tests/unit/config.test.mjs", "tests/unit/items.test.mjs", "tests/unit/dice.test.mjs", "tests/unit/combat-actions.test.mjs", "tests/unit/import-ficha.test.mjs"],
   { cwd: ROOT, stdio: "inherit", shell: false }
 );
 
