@@ -1,5 +1,6 @@
 import { ITEM_TIERS, SHORT_REST, LONG_REST, STABILIZE_DC, STABILIZE_ATTR, getInsanityState } from "./config.mjs";
 import { rollTest } from "./dice.mjs";
+import { spendTurnAction } from "./combat-actions.mjs";
 
 /**
  * Aplica cura ao HP, limitado ao máximo.
@@ -45,6 +46,8 @@ export async function useHealingItem(actor, index) {
     ui.notifications.warn("Defina o nome do item antes de usar como cura.");
     return;
   }
+
+  await spendTurnAction(actor, "support");
 
   const tier = ITEM_TIERS[item.tier] ?? ITEM_TIERS["1"];
   const roll = await new Roll(tier.heal).evaluate();
@@ -111,6 +114,8 @@ export async function stabilizeDying(actor) {
     ui.notifications.warn("Personagem não está Morrendo.");
     return;
   }
+
+  await spendTurnAction(actor, "support");
 
   const { success, total } = await rollTest({
     actor,

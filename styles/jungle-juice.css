@@ -395,3 +395,72 @@
   font-family: inherit;
   white-space: nowrap;
 }
+
+.jungle-juice.sheet.actor .turn-actions {
+  margin-bottom: 12px;
+  padding: 10px;
+  background: var(--jj-surface);
+  border: 1px solid var(--jj-border);
+  border-radius: 8px;
+}
+
+.jungle-juice.sheet.actor .turn-actions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--jj-accent);
+}
+
+.jungle-juice.sheet.actor .btn-reset-actions {
+  background: transparent;
+  border: 1px solid var(--jj-border);
+  color: var(--jj-text);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.jungle-juice.sheet.actor .turn-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.jungle-juice.sheet.actor .turn-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  background: #060c08;
+  border: 1px solid var(--jj-border);
+  border-radius: 6px;
+  color: var(--jj-text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.jungle-juice.sheet.actor .turn-action.spent {
+  opacity: 0.45;
+  border-color: #3a2a2a;
+  text-decoration: line-through;
+}
+
+.jungle-juice.sheet.actor .turn-action.blocked {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.jungle-juice.sheet.actor .turn-action-emoji {
+  font-size: 16px;
+}
+
+.jungle-juice.sheet.actor .turn-action-label {
+  text-align: center;
+  line-height: 1.2;
+}

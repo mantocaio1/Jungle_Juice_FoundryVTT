@@ -101,6 +101,13 @@ export class CharacterModel extends foundry.abstract.TypeDataModel {
 
       dying: new BooleanField({ required: true, initial: false }),
 
+      actions: new SchemaField({
+        principal: new BooleanField({ required: true, initial: false }),
+        movement: new BooleanField({ required: true, initial: false }),
+        support: new BooleanField({ required: true, initial: false }),
+        free: new BooleanField({ required: true, initial: false }),
+      }),
+
       runaway: new SchemaField({
         // Ao atingir 100 (Colapso), o Runaway NÃO é forçado automaticamente:
         // o Mestre precisa desbloquear (unlocked) para permitir a ativação.

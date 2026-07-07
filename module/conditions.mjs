@@ -1,5 +1,6 @@
 import { CONDITIONS, getCondition, RUNAWAY_STATUS_ID } from "./config.mjs";
 import { rollTest } from "./dice.mjs";
+import { resetTurnActions } from "./combat-actions.mjs";
 
 /** Registra as condições do sistema como status effects do Foundry. */
 export function registerConditions() {
@@ -18,6 +19,8 @@ export async function applyStartOfTurnEffects(combat) {
   const combatant = combat.combatant;
   const actor = combatant?.actor;
   if (!actor) return;
+
+  await resetTurnActions(actor);
 
   const statuses = actor.statuses;
   if (!statuses?.size) return;

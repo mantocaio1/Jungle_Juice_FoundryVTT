@@ -17,10 +17,17 @@ import {
   applyAbilityInsanity,
   rollDamage,
   applyDamage,
+  appendItemBonus,
 } from "../dice.mjs";
 import { toggleCondition, tryRecoverCondition } from "../conditions.mjs";
 import { unlockRunaway, activateRunaway, exitRunaway, sendHallucination } from "../insanity.mjs";
 import { useHealingItem, shortRest, longRest, stabilizeDying } from "../healing.mjs";
+import {
+  getTurnActionsState,
+  toggleTurnAction,
+  resetTurnActions,
+  spendTurnAction,
+} from "../combat-actions.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -53,6 +60,8 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       useHealingItem: JungleJuiceActorSheet.#onUseHealingItem,
       shortRest: JungleJuiceActorSheet.#onShortRest,
       longRest: JungleJuiceActorSheet.#onLongRest,
+      toggleTurnAction: JungleJuiceActorSheet.#onToggleTurnAction,
+      resetTurnActions: JungleJuiceActorSheet.#onResetTurnActions,
     },
   };
 
@@ -114,6 +123,7 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     context.isCollapse = system.isCollapse ?? false;
     context.runawayUnlocked = system.runaway?.unlocked ?? false;
     context.runawayActive = system.runaway?.active ?? false;
+    context.turnActions = getTurnActionsState(this.actor);
 
     return context;
   }
@@ -227,6 +237,7 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     const sheet = this;
     const presetAttr = target.dataset.attr;
     const abilities = sheet.actor.system.abilities ?? [];
+    const items = (sheet.actor.system.items ?? []).filter((item) => item.name?.trim());
 
     // Alvo selecionado (targeting) do usuário atual.
     const targetTokens = Array.from(game.user.targets);
@@ -253,6 +264,23 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
       })
       .join("");
 
+    const itemOptions = items
+      .map((item, i) => {
+        const tier = ITEM_TIERS[item.tier ?? "1"];
+        return `<option value="${i}">${item.name.trim()} (Tier ${item.tier} ${tier?.bonus ?? ""})</option>`;
+      })
+      .join("");
+
+    const itemBlock = items.length
+      ? `<div class="form-group">
+           <label>Bônus de item no dano</label>
+           <select name="item">
+             <option value="-1">Nenhum</option>
+             ${itemOptions}
+           </select>
+         </div>`
+      : "";
+
     const targetBlock = targetActor
       ? `<p class="jj-target">🎯 Alvo: <strong>${targetActor.name}</strong> (AC ${targetAc} · HP ${targetActor.system.hp.value}/${targetActor.system.hp.max})</p>`
       : `<div class="form-group">
@@ -278,6 +306,7 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
           <label>Dano (opcional — usado se não houver dado na habilidade)</label>
           <input type="text" name="damage" placeholder="ex: 1d6 + 2"/>
         </div>
+        ${itemBlock}
       </div>`;
 
     const data = await foundry.applications.api.DialogV2.wait({
@@ -297,10 +326,14 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
 
     if (!data) return;
 
+    await spendTurnAction(sheet.actor, "principal");
+
     const attrKey = data.attr ?? presetAttr;
     const ac = targetActor ? targetAc : Number(data.ac ?? 12);
     const abilityIndex = Number(data.ability ?? -1);
     const ability = abilityIndex >= 0 ? abilities[abilityIndex] : null;
+    const itemIndex = Number(data.item ?? -1);
+    const attackItem = itemIndex >= 0 ? items[itemIndex] : null;
 
     // Rola o ataque contra o AC do alvo.
     const { hit, natural20 } = await rollAttack({ actor: sheet.actor, attrKey, ac });
@@ -310,13 +343,13 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
 
     if (!hit) return;
 
-    // Determina a fórmula de dano: dado da habilidade ou campo manual.
-    const damageFormula =
-      (ability?.damage?.trim() || data.damage?.trim() || "").trim();
+    // Determina a fórmula de dano: dado da habilidade ou campo manual + bônus de item.
+    let damageFormula = (ability?.damage?.trim() || data.damage?.trim() || "").trim();
+    damageFormula = appendItemBonus(damageFormula, attackItem);
 
     if (!damageFormula || !Roll.validate(damageFormula)) return;
 
-    const label = ability?.name?.trim() || "Ataque";
+    const label = ability?.name?.trim() || attackItem?.name?.trim() || "Ataque";
     const damage = await rollDamage(sheet.actor, damageFormula, label);
 
     if (targetActor) {
@@ -444,6 +477,19 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
   /** @param {PointerEvent} event */
   static async #onLongRest() {
     await longRest(this.actor);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onToggleTurnAction(event, target) {
+    const actionId = target.dataset.actionId;
+    await toggleTurnAction(this.actor, actionId);
+    this.render(false);
+  }
+
+  /** @param {PointerEvent} event */
+  static async #onResetTurnActions() {
+    await resetTurnActions(this.actor);
     this.render(false);
   }
 }

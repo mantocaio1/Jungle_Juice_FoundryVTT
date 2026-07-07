@@ -12,3 +12,7 @@ packs/npcs/*
 !packs/npcs/.gitkeep
 packs/bestiario/*
 !packs/bestiario/.gitkeep
+packs/macros-mestre/*
+!packs/macros-mestre/.gitkeep
+packs/cenas/*
+!packs/cenas/.gitkeep

@@ -76,6 +76,34 @@ export const FACTION_NAMES = [
 export const STABILIZE_DC = 12;
 export const STABILIZE_ATTR = "res";
 
+/** 4 ações por turno de combate (Parte 4). `spent: true` = já usada. */
+export const TURN_ACTIONS = [
+  {
+    id: "principal",
+    label: "Principal",
+    emoji: "⚔️",
+    hint: "Ataque, habilidade ativa do Complex ou ação equivalente.",
+  },
+  {
+    id: "movement",
+    label: "Movimentação",
+    emoji: "🏃",
+    hint: "Deslocar-se no mapa (distância conforme regras da mesa).",
+  },
+  {
+    id: "support",
+    label: "Suporte",
+    emoji: "🤝",
+    hint: "Ajudar aliado, usar item, estabilizar, etc.",
+  },
+  {
+    id: "free",
+    label: "Livre",
+    emoji: "💬",
+    hint: "Falar, sacar item, abrir porta — perdida se Atordoado.",
+  },
+];
+
 export const PHYSICAL_ATTRS = ["for", "agi", "res", "pre"];
 export const MENTAL_ATTRS = ["men", "per"];
 

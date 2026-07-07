@@ -2,10 +2,14 @@ import { SYSTEM_ID } from "./config.mjs";
 import { FACTIONS } from "./data/factions.mjs";
 import { NPCS } from "./data/npcs.mjs";
 import { BESTIARY } from "./data/bestiary.mjs";
+import { GM_MACROS } from "./data/gm-macros.mjs";
+import { SCENE_TEMPLATES } from "./data/scenes.mjs";
 
 const PACK_FACTIONS = `${SYSTEM_ID}.faccoes`;
 const PACK_NPCS = `${SYSTEM_ID}.npcs`;
 const PACK_BESTIARY = `${SYSTEM_ID}.bestiario`;
+const PACK_MACROS = `${SYSTEM_ID}.macros-mestre`;
+const PACK_SCENES = `${SYSTEM_ID}.cenas`;
 
 /**
  * Popula os compêndios do sistema na primeira carga do mundo (GM ativo).
@@ -17,6 +21,8 @@ export async function seedCompendiums() {
   await seedFactionPack();
   await seedNpcPack();
   await seedBestiaryPack();
+  await seedMacroPack();
+  await seedScenePack();
 }
 
 /**
@@ -99,5 +105,49 @@ async function seedBestiaryPack() {
 
     await Actor.implementation.createDocuments(data, { pack: PACK_BESTIARY });
     ui.notifications.info(`Compêndio "Bestiário" populado (${BESTIARY.length} entradas).`);
+  });
+}
+
+async function seedMacroPack() {
+  await withUnlockedPack(PACK_MACROS, async () => {
+    const data = GM_MACROS.map((macro) => ({
+      name: macro.name,
+      type: "script",
+      img: macro.img,
+      command: macro.command,
+      scope: "global",
+    }));
+
+    await Macro.implementation.createDocuments(data, { pack: PACK_MACROS });
+    ui.notifications.info(`Compêndio "Macros do Mestre" populado (${GM_MACROS.length} entradas).`);
+  });
+}
+
+async function seedScenePack() {
+  await withUnlockedPack(PACK_SCENES, async () => {
+    const data = SCENE_TEMPLATES.map((scene) => ({
+      name: scene.name,
+      img: scene.img,
+      pages: [
+        {
+          name: scene.name,
+          type: "text",
+          title: { show: true, level: 1 },
+          text: {
+            format: 1,
+            content: scene.content.trim(),
+          },
+        },
+      ],
+      flags: {
+        [SYSTEM_ID]: {
+          tagline: scene.tagline,
+          sceneId: scene.id,
+        },
+      },
+    }));
+
+    await JournalEntry.implementation.createDocuments(data, { pack: PACK_SCENES });
+    ui.notifications.info(`Compêndio "Cenas" populado (${SCENE_TEMPLATES.length} entradas).`);
   });
 }

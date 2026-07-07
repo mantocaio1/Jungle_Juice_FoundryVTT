@@ -1,4 +1,5 @@
-import { ATTRIBUTES, ABILITY_TYPES, getInsanityState, hasDisadvantage } from "./config.mjs";
+import { ATTRIBUTES, ABILITY_TYPES, ITEM_TIERS, getInsanityState, hasDisadvantage } from "./config.mjs";
+import { spendTurnAction } from "./combat-actions.mjs";
 
 /**
  * Monta a fórmula do d20 considerando desvantagem (2d20 mantendo o menor).
@@ -92,6 +93,20 @@ export async function applyAbilityInsanity(actor, ability) {
 }
 
 /**
+ * Acrescenta o dado de bônus do tier do item à fórmula de dano.
+ * @param {string} formula
+ * @param {object} [item]
+ * @returns {string}
+ */
+export function appendItemBonus(formula, item) {
+  if (!item?.name?.trim()) return formula;
+  const bonus = ITEM_TIERS[item.tier ?? "1"]?.heal;
+  if (!bonus) return formula;
+  const base = formula?.trim() ?? "";
+  return base ? `${base} + ${bonus}` : bonus;
+}
+
+/**
  * Rola dano e retorna o total.
  * @param {Actor} actor
  * @param {string} formula
@@ -132,6 +147,11 @@ export async function useAbility({ actor, index }) {
 
   const type = ABILITY_TYPES[ability.type] ?? ABILITY_TYPES.passiva;
   const name = ability.name?.trim() || "Habilidade sem nome";
+
+  if (ability.type !== "passiva") {
+    await spendTurnAction(actor, "principal");
+  }
+
   const { cost, newInsanity } = await applyAbilityInsanity(actor, ability);
 
   const state = getInsanityState(newInsanity);

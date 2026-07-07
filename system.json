@@ -2,7 +2,7 @@
   "id": "jungle-juice",
   "title": "Jungle Juice RPG",
   "description": "Sistema de mesa para Jungle Juice RPG — horror, suspense e Insecta Complex. Compatível com Foundry VTT v14.364.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "compatibility": {
     "minimum": "14",
     "verified": "14.364"
@@ -51,6 +51,26 @@
       "path": "packs/bestiario",
       "type": "Actor",
       "system": "jungle-juice",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "macros-mestre",
+      "label": "Macros do Mestre",
+      "path": "packs/macros-mestre",
+      "type": "Macro",
+      "ownership": {
+        "PLAYER": "NONE",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "cenas",
+      "label": "Cenas",
+      "path": "packs/cenas",
+      "type": "JournalEntry",
       "ownership": {
         "PLAYER": "OBSERVER",
         "ASSISTANT": "OWNER"

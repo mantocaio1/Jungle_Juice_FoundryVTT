@@ -142,8 +142,28 @@
     <div class="roll-grid">
       <button type="button" class="btn-attack" data-action="rollAttack" data-attr="for">⚔️ Atacar</button>
     </div>
-    <p class="hint">Abre um diálogo para escolher atributo, AC do alvo e, opcionalmente, uma habilidade do Complex.</p>
+    <p class="hint">Abre um diálogo para escolher atributo, AC do alvo, habilidade do Complex e bônus de item (+1d4/1d6/1d8).</p>
     <h3>Combate</h3>
+    <div class="turn-actions">
+      <div class="turn-actions-header">
+        <span>Ações do turno</span>
+        <button type="button" class="btn-reset-actions" data-action="resetTurnActions" title="Resetar manualmente (também reseta no início do turno no combate)">↺ Resetar</button>
+      </div>
+      <div class="turn-actions-grid">
+        {{#each turnActions as |action|}}
+        <button type="button"
+          class="turn-action {{#if action.spent}}spent{{/if}} {{#if action.blocked}}blocked{{/if}}"
+          data-action="toggleTurnAction"
+          data-action-id="{{action.id}}"
+          title="{{action.hint}}{{#if action.blocked}} — Bloqueada por {{action.blockedBy}}{{/if}}"
+          {{#if action.blocked}}disabled{{/if}}>
+          <span class="turn-action-emoji">{{action.emoji}}</span>
+          <span class="turn-action-label">{{action.label}}</span>
+        </button>
+        {{/each}}
+      </div>
+      <p class="hint">Clique para marcar/desmarcar. Ataques gastam Principal; itens de cura gastam Suporte. Atordoado bloqueia Livre; Imobilizado bloqueia Movimentação e Suporte.</p>
+    </div>
     <div class="roll-grid">
       <button type="button" data-action="rollInit">Iniciativa (D20 + AGI)</button>
       {{#if system.dying}}
