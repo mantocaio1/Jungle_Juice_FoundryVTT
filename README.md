@@ -132,6 +132,14 @@ Tags `v*` disparam o workflow que gera:
 - `jungle-juice.zip` — sistema
 - `jungle-juice-compendia.zip` — módulo de compêndios
 
+### Testes
+
+```bash
+npm test
+```
+
+Valida manifests, sintaxe de todos os `.mjs`, templates obrigatórios e regras puras (condições, insanidade, itens, ações de turno). O CI roda automaticamente em cada push/PR na `main`.
+
 ## Roadmap
 
 - [x] MVP combate, insanidade, condições
@@ -139,7 +147,7 @@ Tags `v*` disparam o workflow que gera:
 - [x] Ações por turno e bônus de item em ataque
 - [x] Itens como documentos Foundry
 - [x] Módulo companion + manifests para instalação
-- [ ] Testes E2E automatizados
+- [x] Testes E2E automatizados (smoke + unitários via `npm test`)
 - [ ] Submissão ao package browser oficial do Foundry
 
 ## Licença
