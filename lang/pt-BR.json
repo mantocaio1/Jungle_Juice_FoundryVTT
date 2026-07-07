@@ -21,6 +21,8 @@
     "AC": "AC",
     "Factions": "Facções",
     "NPCs": "NPCs",
-    "Bestiary": "Bestiário"
+    "Bestiary": "Bestiário",
+    "CreateFromFicha": "Criar do JSON",
+    "CreateFromFichaHint": "Criar personagem a partir da ficha JSON exportada"
   }
 }

@@ -190,6 +190,22 @@ export async function applyFichaToActor(actor, raw) {
   return data;
 }
 
+/** Abre diálogo para colar JSON da ficha HTML. @returns {Promise<string|null>} */
+export async function promptFichaJson() {
+  const text = await foundry.applications.api.DialogV2.prompt({
+    window: { title: "Importar ficha JSON" },
+    content: `<textarea name="json" rows="12" style="width:100%;font-family:monospace" placeholder='Cole o JSON exportado pela ficha HTML...'></textarea>`,
+    ok: {
+      label: "Importar",
+      callback: (ev, button) => new foundry.applications.ux.FormDataExtended(button.form).object.json,
+    },
+    rejectClose: false,
+  });
+
+  const value = String(text ?? "").trim();
+  return value || null;
+}
+
 /**
  * Cria um personagem novo a partir da ficha JSON.
  * @param {string|object} raw

@@ -36,7 +36,7 @@ import {
   deleteGearItem,
   itemRollData,
 } from "../items.mjs";
-import { applyFichaToActor, exportFichaJson } from "../import-ficha.mjs";
+import { applyFichaToActor, exportFichaJson, promptFichaJson } from "../import-ficha.mjs";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ActorSheetV2 } = foundry.applications.sheets;
@@ -533,17 +533,8 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
   static async #onImportFicha() {
     if (!game.user.isGM) return;
 
-    const text = await foundry.applications.api.DialogV2.prompt({
-      window: { title: "Importar ficha JSON" },
-      content: `<textarea name="json" rows="12" style="width:100%;font-family:monospace" placeholder='Cole o JSON exportado pela ficha HTML...'></textarea>`,
-      ok: {
-        label: "Importar",
-        callback: (ev, button) => new foundry.applications.ux.FormDataExtended(button.form).object.json,
-      },
-      rejectClose: false,
-    });
-
-    if (!text?.trim()) return;
+    const text = await promptFichaJson();
+    if (!text) return;
 
     try {
       await applyFichaToActor(this.actor, text);

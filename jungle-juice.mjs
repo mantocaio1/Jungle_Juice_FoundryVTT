@@ -11,12 +11,18 @@ import {
   migrateAllActorItems,
   extractLegacyItemsFromCreateData,
 } from "./module/items.mjs";
+import { registerTokenBars } from "./module/token-bars.mjs";
+import { registerCombatTrackerUi } from "./module/combat-tracker-ui.mjs";
+import { registerActorDirectory } from "./module/actor-directory.mjs";
 
 Hooks.once("init", () => {
   console.log(`${SYSTEM_ID} | Inicializando sistema Jungle Juice RPG`);
 
   registerHandlebarsHelpers();
   registerConditions();
+  registerTokenBars();
+  registerCombatTrackerUi();
+  registerActorDirectory();
 
   CONFIG.Actor.documentClass = JungleJuiceActor;
   CONFIG.Actor.dataModels.character = CharacterModel;
