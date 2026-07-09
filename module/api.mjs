@@ -1,5 +1,7 @@
 import { SYSTEM_ID } from "./config.mjs";
 import { shortRest, longRest, applyHealing, adjustInsanity } from "./healing.mjs";
+import { rollTest } from "./dice.mjs";
+import { toggleCondition } from "./conditions.mjs";
 
 /**
  * Resolve o ator alvo de uma interação de cena (macro, Active Tile, etc.).
@@ -51,5 +53,7 @@ export function registerApi() {
     getPartyActors,
     shortRestParty,
     longRestParty,
+    rollTest,
+    toggleCondition,
   };
 }

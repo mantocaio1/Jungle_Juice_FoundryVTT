@@ -303,4 +303,91 @@ export const BESTIARY = [
       }
     ),
   },
+  {
+    name: "Rato de Esgoto (Fraco)",
+    img: "icons/svg/rat.svg",
+    threat: "fraco",
+    system: buildNpcSystem(
+      { for: 2, agi: 4, res: 2, men: 0, per: 3, pre: 1, int: 0 },
+      {
+        insect: "Rato",
+        faction: "Stray Dogs",
+        insanity: 15,
+        hp: 6,
+        origin: "<p>Roedor infectado do subterrâneo. Ataca em bando ou foge para chamar reforços.</p>",
+        motivation: "<p>Proteger o ninho subterrâneo.</p>",
+        abilities: [
+          {
+            name: "Mordida Rápida",
+            type: "ativa_l",
+            desc: "Ataque surpresa em corredores estreitos.",
+            weakness: "Luz forte causa hesitação.",
+            damage: "1d4",
+          },
+        ],
+      }
+    ),
+  },
+  {
+    name: "Sentinela Hollow (Médio)",
+    img: "icons/svg/shield.svg",
+    threat: "medio",
+    system: buildNpcSystem(
+      { for: 3, agi: 2, res: 4, men: 3, per: 3, pre: 3, int: 2 },
+      {
+        insect: "Besouro",
+        faction: "Hollow",
+        insanity: 45,
+        origin: "<p>Guardião ritualístico. Protege santuários e rituais do culto.</p>",
+        motivation: "<p>Impedir profanação — mesmo à custa da própria vida.</p>",
+        abilities: [
+          {
+            name: "Escudo de Quitina",
+            type: "passiva",
+            desc: "+1d6 defesa narrativa contra ataques frontais.",
+            weakness: "Flancos ignoram o bônus.",
+            damage: "",
+          },
+          {
+            name: "Golpe Ritual",
+            type: "ativa_f",
+            desc: "Ataque com bênção do Complex.",
+            weakness: "Precisa de 1 turno de preparação.",
+            damage: "1d8",
+          },
+        ],
+      }
+    ),
+  },
+  {
+    name: "Parasita de Sombra (Forte)",
+    img: "icons/svg/moon.svg",
+    threat: "forte",
+    system: buildNpcSystem(
+      { for: 2, agi: 5, res: 3, men: 2, per: 4, pre: 2, int: 1 },
+      {
+        insect: "Mosca",
+        faction: "NEST",
+        insanity: 50,
+        origin: "<p>Predador noturno. Fixa em alvos isolados e aplica Alucinado antes do ataque físico.</p>",
+        motivation: "<p>Alimentar-se de medo e carne.</p>",
+        abilities: [
+          {
+            name: "Zumbido Hipnótico",
+            type: "ativa_l",
+            desc: "Alvo falha PER CD 14 ou fica Alucinado.",
+            weakness: "Ineficaz em grupo barulhento.",
+            damage: "",
+          },
+          {
+            name: "Picada Silenciosa",
+            type: "ativa_f",
+            desc: "Ataque furtivo em escuridão.",
+            weakness: "Luz revela o voo.",
+            damage: "1d8",
+          },
+        ],
+      }
+    ),
+  },
 ];

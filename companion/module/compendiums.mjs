@@ -24,6 +24,7 @@ export async function seedCompendiums() {
   await seedMacroPack();
   await seedScenePack();
   await ensureNpcPack();
+  await ensureBestiaryPack();
   await ensureMacroPack();
 }
 
@@ -126,6 +127,36 @@ async function seedBestiaryPack() {
   });
 }
 
+/** Adiciona entradas novas em mundos que já tinham o bestiário populado. */
+async function ensureBestiaryPack() {
+  const pack = game.packs.get(PACK_BESTIARY);
+  if (!pack || pack.index.size === 0) return;
+
+  const existing = new Set((await pack.getDocuments()).map((doc) => doc.name));
+  const missing = BESTIARY.filter((entry) => !existing.has(entry.name));
+  if (!missing.length) return;
+
+  const wasLocked = pack.locked;
+  if (wasLocked) await pack.configure({ locked: false });
+  try {
+    await Actor.implementation.createDocuments(
+      missing.map((entry) => ({
+        name: entry.name,
+        type: "npc",
+        img: entry.img,
+        system: entry.system,
+        flags: {
+          [SYSTEM_ID]: { compendium: "bestiary", threat: entry.threat },
+        },
+      })),
+      { pack: PACK_BESTIARY }
+    );
+    ui.notifications.info(`[Jungle Juice] ${missing.length} entrada(s) adicionada(s) ao bestiário.`);
+  } finally {
+    if (wasLocked) await pack.configure({ locked: true });
+  }
+}
+
 async function seedMacroPack() {
   await withUnlockedPack(PACK_MACROS, async () => {
     const data = ALL_MACROS.map((macro) => ({
@@ -163,7 +194,7 @@ async function ensureMacroPack() {
       })),
       { pack: PACK_MACROS }
     );
-    ui.notifications.info(`[Jungle Juice] ${missing.length} macro(s) de ambiente adicionada(s).`);
+    ui.notifications.info(`[Jungle Juice] ${missing.length} macro(s) adicionada(s) ao compêndio.`);
   } finally {
     if (wasLocked) await pack.configure({ locked: true });
   }

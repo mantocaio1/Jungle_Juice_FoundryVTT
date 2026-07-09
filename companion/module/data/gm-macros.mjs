@@ -1,5 +1,7 @@
 /** Macros de script para o Mestre (compêndio jungle-juice.macros-mestre). */
 
+const JJ = `const jj = game.jungleJuice; if (!jj) return ui.notifications.error("Sistema Jungle Juice não carregado.");`;
+
 const INSANITY_TARGET = `
 const tokens = canvas.tokens.controlled;
 if (!tokens.length) return ui.notifications.warn("Selecione um ou mais tokens no mapa.");
@@ -78,5 +80,78 @@ for (const token of tokens) {
 }
 ui.notifications.info(\`Ações de turno resetadas para \${tokens.length} token(s).\`);
 `.trim(),
+  },
+  {
+    name: "Investigação — teste em grupo (PER)",
+    img: "icons/svg/search.svg",
+    command: `${JJ}
+const tokens = canvas.tokens.controlled;
+const actors = tokens.length
+  ? tokens.map((t) => t.actor).filter(Boolean)
+  : jj.getPartyActors();
+if (!actors.length) return ui.notifications.warn("Selecione tokens no mapa ou tenha PCs no mundo.");
+const form = await foundry.applications.api.DialogV2.prompt({
+  window: { title: "Teste em grupo" },
+  content: \`<div style="display:flex;flex-direction:column;gap:8px">
+    <label>Atributo<select name="attr"><option value="per">PER — Percepção</option><option value="int">INT — Investigação</option><option value="men">MEN — Intuição</option></select></label>
+    <label>CD <input type="number" name="dc" value="14" min="1" max="30" style="width:100%"/></label>
+    <label>Descrição <input type="text" name="label" placeholder="Ex.: encontrar pistas na sala" style="width:100%"/></label>
+  </div>\`,
+  ok: { label: "Rolar", callback: (ev, btn) => new foundry.applications.ux.FormDataExtended(btn.form).object },
+  rejectClose: false,
+});
+if (!form) return;
+const dc = Number(form.dc) || 14;
+const label = form.label?.trim() || "Teste em grupo";
+let successes = 0;
+for (const actor of actors) {
+  const result = await jj.rollTest({ actor, attrKey: form.attr, target: dc, label });
+  if (result.success) successes += 1;
+}
+await ChatMessage.create({
+  content: \`<div class="jungle-juice-card"><h3>Investigação em grupo</h3><p><strong>\${successes}/\${actors.length}</strong> sucesso(s) — CD \${dc} (\${label})</p></div>\`,
+});`,
+  },
+  {
+    name: "Combate — aplicar condição (alvo)",
+    img: "icons/svg/aura.svg",
+    command: `${JJ}
+const tokens = canvas.tokens.controlled;
+if (!tokens.length) return ui.notifications.warn("Selecione um ou mais tokens no mapa.");
+const form = await foundry.applications.api.DialogV2.prompt({
+  window: { title: "Aplicar condição" },
+  content: \`<label>Condição<select name="id" style="width:100%">
+    <option value="stunned">Atordoado</option>
+    <option value="poisoned">Envenenado</option>
+    <option value="immobilized">Imobilizado</option>
+    <option value="bleeding">Sangrando</option>
+    <option value="hallucinating">Alucinado</option>
+    <option value="blinded">Cego</option>
+    <option value="deafened">Surdo</option>
+    <option value="burning">Queimando</option>
+  </select></label>\`,
+  ok: { label: "Aplicar", callback: (ev, btn) => new foundry.applications.ux.FormDataExtended(btn.form).object.id },
+  rejectClose: false,
+});
+if (!form) return;
+for (const token of tokens) {
+  if (!token.actor) continue;
+  await jj.toggleCondition(token.actor, form);
+}
+ui.notifications.info(\`Condição aplicada em \${tokens.length} token(s).\`);`,
+  },
+  {
+    name: "Combate — curar alvo (+1d6 HP)",
+    img: "icons/svg/regen.svg",
+    command: `${JJ}
+const tokens = canvas.tokens.controlled;
+if (!tokens.length) return ui.notifications.warn("Selecione um ou mais tokens.");
+for (const token of tokens) {
+  if (!token.actor) continue;
+  const roll = await new Roll("1d6").evaluate();
+  await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor: token.actor }), flavor: "Cura rápida" });
+  await jj.applyHealing(token.actor, roll.total);
+}
+ui.notifications.info(\`Cura aplicada em \${tokens.length} token(s).\`);`,
   },
 ];
