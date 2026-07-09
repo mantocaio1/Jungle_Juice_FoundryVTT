@@ -68,6 +68,18 @@ export async function toggleCondition(actor, conditionId) {
   await actor.toggleStatusEffect(conditionId);
 }
 
+/** @param {Actor} actor @param {string} conditionId */
+export async function applyCondition(actor, conditionId) {
+  const condition = getCondition(conditionId);
+  if (!condition) return;
+  if (!actor.statuses?.has(conditionId)) await actor.toggleStatusEffect(conditionId);
+}
+
+/** @param {Actor} actor @param {string} conditionId */
+export async function removeCondition(actor, conditionId) {
+  if (actor.statuses?.has(conditionId)) await actor.toggleStatusEffect(conditionId, { active: false });
+}
+
 /**
  * Teste de recuperação para remover uma condição ativa (Parte 4).
  * @param {Actor} actor

@@ -59,7 +59,7 @@ const recipients = game.users.filter(
 if (!recipients.length) return ui.notifications.warn("Nenhum jogador dono deste token.");
 await ChatMessage.create({
   content: \`<div class="jungle-juice-card"><h3>👁️ Alucinação</h3><p><em>(Edite o texto desta mensagem antes de enviar, se necessário.)</em></p><p>Você vê algo que não deveria estar ali...</p></div>\`,
-  whisper: ChatMessage.getWhisperRecipients(recipients.map((u) => u.name)),
+  whisper: recipients.map((u) => u.id),
 });
 `.trim(),
   },
@@ -136,7 +136,7 @@ const form = await foundry.applications.api.DialogV2.prompt({
 if (!form) return;
 for (const token of tokens) {
   if (!token.actor) continue;
-  await jj.toggleCondition(token.actor, form);
+  await jj.applyCondition(token.actor, form);
 }
 ui.notifications.info(\`Condição aplicada em \${tokens.length} token(s).\`);`,
   },
@@ -153,5 +153,109 @@ for (const token of tokens) {
   await jj.applyHealing(token.actor, roll.total);
 }
 ui.notifications.info(\`Cura aplicada em \${tokens.length} token(s).\`);`,
+  },
+  {
+    name: "Combate — remover condição (alvo)",
+    img: "icons/svg/cancel.svg",
+    command: `${JJ}
+const tokens = canvas.tokens.controlled;
+if (!tokens.length) return ui.notifications.warn("Selecione um ou mais tokens no mapa.");
+const form = await foundry.applications.api.DialogV2.prompt({
+  window: { title: "Remover condição" },
+  content: \`<label>Condição<select name="id" style="width:100%">
+    <option value="stunned">Atordoado</option>
+    <option value="poisoned">Envenenado</option>
+    <option value="immobilized">Imobilizado</option>
+    <option value="bleeding">Sangrando</option>
+    <option value="hallucinating">Alucinado</option>
+    <option value="blinded">Cego</option>
+    <option value="deafened">Surdo</option>
+    <option value="burning">Queimando</option>
+  </select></label>\`,
+  ok: { label: "Remover", callback: (ev, btn) => new foundry.applications.ux.FormDataExtended(btn.form).object.id },
+  rejectClose: false,
+});
+if (!form) return;
+for (const token of tokens) {
+  if (!token.actor) continue;
+  await jj.removeCondition(token.actor, form);
+}
+ui.notifications.info(\`Condição removida de \${tokens.length} token(s).\`);`,
+  },
+  {
+    name: "Combate — aplicar dano (alvo)",
+    img: "icons/svg/blood.svg",
+    command: `${JJ}
+const tokens = canvas.tokens.controlled;
+if (!tokens.length) return ui.notifications.warn("Selecione um ou mais tokens no mapa.");
+const form = await foundry.applications.api.DialogV2.prompt({
+  window: { title: "Aplicar dano" },
+  content: \`<div style="display:flex;flex-direction:column;gap:8px">
+    <label>Fórmula <input name="formula" type="text" value="1d6" style="width:100%"/></label>
+    <label>Descrição <input name="label" type="text" placeholder="Ex.: mordida, tiro, queda" style="width:100%"/></label>
+  </div>\`,
+  ok: { label: "Aplicar", callback: (ev, btn) => new foundry.applications.ux.FormDataExtended(btn.form).object },
+  rejectClose: false,
+});
+if (!form?.formula?.trim()) return;
+const label = form.label?.trim() || "Dano";
+for (const token of tokens) {
+  if (!token.actor) continue;
+  const { damage, newHp } = await jj.applyDamageFromRoll(token.actor, form.formula.trim(), label);
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: token.actor }),
+    content: \`<div class="jungle-juice-card"><p>💥 <strong>-\${damage}</strong> HP → \${newHp}/\${token.actor.system.hp.max}</p></div>\`,
+  });
+}
+ui.notifications.info(\`Dano aplicado em \${tokens.length} token(s).\`);`,
+  },
+  {
+    name: "Combate — estabilizar (medicina)",
+    img: "icons/svg/heal.svg",
+    command: `${JJ}
+const token = canvas.tokens.controlled[0];
+if (!token?.actor) return ui.notifications.warn("Selecione o token Morrendo.");
+if (token.actor.system.hp.value > 0) return ui.notifications.warn("Personagem não está Morrendo (HP > 0).");
+await jj.stabilizeDying(token.actor);`,
+  },
+  {
+    name: "Investigação — pista revelada",
+    img: "icons/svg/book.svg",
+    command: `${JJ}
+const form = await foundry.applications.api.DialogV2.prompt({
+  window: { title: "Pista revelada" },
+  content: \`<div style="display:flex;flex-direction:column;gap:8px">
+    <label>Título <input name="title" type="text" placeholder="Ex.: Diário rasgado" style="width:100%"/></label>
+    <label>Conteúdo <textarea name="body" rows="5" style="width:100%" placeholder="O que os jogadores descobrem..."></textarea></label>
+    <label><input type="checkbox" name="whisper" checked/> Sussurrar só para jogadores (não GM)</label>
+  </div>\`,
+  ok: { label: "Revelar", callback: (ev, btn) => new foundry.applications.ux.FormDataExtended(btn.form).object },
+  rejectClose: false,
+});
+if (!form?.body?.trim()) return;
+const title = form.title?.trim() || "Pista encontrada";
+const content = \`<div class="jungle-juice-card"><h3>🔎 \${title}</h3><p>\${form.body.trim()}</p></div>\`;
+const msg = { content };
+if (form.whisper) {
+  msg.whisper = game.users.filter((u) => !u.isGM && u.active).map((u) => u.id);
+}
+await ChatMessage.create(msg);`,
+  },
+  {
+    name: "Horror — evento (+5 Ins + relógio)",
+    img: "icons/svg/skull.svg",
+    command: `${JJ}
+const tokens = canvas.tokens.controlled;
+const actors = tokens.length
+  ? tokens.map((t) => t.actor).filter(Boolean)
+  : jj.getPartyActors();
+if (!actors.length) return ui.notifications.warn("Selecione tokens ou tenha PCs no mundo.");
+for (const actor of actors) await jj.adjustInsanity(actor, 5);
+const clocks = jj.clocks?.get?.() ?? [];
+if (clocks.length) await jj.clocks.advance(clocks[0].id, 1);
+await ChatMessage.create({
+  content: \`<div class="jungle-juice-card"><h3>☠️ Evento de horror</h3><p>+\${actors.length} alvo(s) receberam <strong>+5 Insanidade</strong>\${clocks.length ? " e o relógio avançou." : "."}</p></div>\`,
+});
+ui.notifications.info("Evento de horror aplicado.");`,
   },
 ];

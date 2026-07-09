@@ -172,29 +172,42 @@ async function seedMacroPack() {
   });
 }
 
-/** Adiciona macros novas em mundos que já tinham o compêndio populado. */
+/** Adiciona macros novas e atualiza comandos alterados em mundos existentes. */
 async function ensureMacroPack() {
   const pack = game.packs.get(PACK_MACROS);
   if (!pack || pack.index.size === 0) return;
 
-  const existing = new Set((await pack.getDocuments()).map((doc) => doc.name));
-  const missing = ALL_MACROS.filter((macro) => !existing.has(macro.name));
-  if (!missing.length) return;
+  const docs = await pack.getDocuments();
+  const byName = new Map(docs.map((doc) => [doc.name, doc]));
+  const missing = ALL_MACROS.filter((macro) => !byName.has(macro.name));
+  const stale = ALL_MACROS.filter((macro) => {
+    const doc = byName.get(macro.name);
+    return doc && doc.command !== macro.command;
+  });
+  if (!missing.length && !stale.length) return;
 
   const wasLocked = pack.locked;
   if (wasLocked) await pack.configure({ locked: false });
   try {
-    await Macro.implementation.createDocuments(
-      missing.map((macro) => ({
-        name: macro.name,
-        type: "script",
-        img: macro.img,
-        command: macro.command,
-        scope: "global",
-      })),
-      { pack: PACK_MACROS }
-    );
-    ui.notifications.info(`[Jungle Juice] ${missing.length} macro(s) adicionada(s) ao compêndio.`);
+    if (missing.length) {
+      await Macro.implementation.createDocuments(
+        missing.map((macro) => ({
+          name: macro.name,
+          type: "script",
+          img: macro.img,
+          command: macro.command,
+          scope: "global",
+        })),
+        { pack: PACK_MACROS }
+      );
+    }
+    for (const macro of stale) {
+      await byName.get(macro.name).update({ command: macro.command, img: macro.img });
+    }
+    const parts = [];
+    if (missing.length) parts.push(`${missing.length} adicionada(s)`);
+    if (stale.length) parts.push(`${stale.length} atualizada(s)`);
+    ui.notifications.info(`[Jungle Juice] Macro(s) ${parts.join(", ")} no compêndio.`);
   } finally {
     if (wasLocked) await pack.configure({ locked: true });
   }

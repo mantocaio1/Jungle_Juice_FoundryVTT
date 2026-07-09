@@ -138,6 +138,22 @@ export async function applyDamage(targetActor, amount) {
 }
 
 /**
+ * Rola dano e aplica ao alvo.
+ * @param {Actor} targetActor
+ * @param {string} formula
+ * @param {string} [label]
+ */
+export async function applyDamageFromRoll(targetActor, formula, label = "Dano") {
+  const roll = await new Roll(formula).evaluate();
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({ actor: targetActor }),
+    flavor: `${label} — dano recebido`,
+  });
+  const newHp = await applyDamage(targetActor, roll.total);
+  return { roll, damage: roll.total, newHp };
+}
+
+/**
  * Usa uma habilidade do Insecta Complex, aplicando o custo de insanidade
  * conforme o tipo. Habilidades passivas não têm custo.
  * @param {object} options
