@@ -3,7 +3,10 @@ import { FACTIONS } from "./data/factions.mjs";
 import { NPCS } from "./data/npcs.mjs";
 import { BESTIARY } from "./data/bestiary.mjs";
 import { GM_MACROS } from "./data/gm-macros.mjs";
+import { ENVIRONMENT_MACROS } from "./data/environment-macros.mjs";
 import { SCENE_TEMPLATES } from "./data/scenes.mjs";
+
+const ALL_MACROS = [...GM_MACROS, ...ENVIRONMENT_MACROS];
 
 const PACK_FACTIONS = `${MODULE_ID}.faccoes`;
 const PACK_NPCS = `${MODULE_ID}.npcs`;
@@ -20,6 +23,7 @@ export async function seedCompendiums() {
   await seedBestiaryPack();
   await seedMacroPack();
   await seedScenePack();
+  await ensureMacroPack();
 }
 
 async function withUnlockedPack(packId, seedFn) {
@@ -96,7 +100,7 @@ async function seedBestiaryPack() {
 
 async function seedMacroPack() {
   await withUnlockedPack(PACK_MACROS, async () => {
-    const data = GM_MACROS.map((macro) => ({
+    const data = ALL_MACROS.map((macro) => ({
       name: macro.name,
       type: "script",
       img: macro.img,
@@ -105,8 +109,36 @@ async function seedMacroPack() {
     }));
 
     await Macro.implementation.createDocuments(data, { pack: PACK_MACROS });
-    ui.notifications.info(`[Jungle Juice] Compêndio "Macros do Mestre" populado (${GM_MACROS.length} entradas).`);
+    ui.notifications.info(`[Jungle Juice] Compêndio "Macros do Mestre" populado (${ALL_MACROS.length} entradas).`);
   });
+}
+
+/** Adiciona macros novas em mundos que já tinham o compêndio populado. */
+async function ensureMacroPack() {
+  const pack = game.packs.get(PACK_MACROS);
+  if (!pack || pack.index.size === 0) return;
+
+  const existing = new Set((await pack.getDocuments()).map((doc) => doc.name));
+  const missing = ALL_MACROS.filter((macro) => !existing.has(macro.name));
+  if (!missing.length) return;
+
+  const wasLocked = pack.locked;
+  if (wasLocked) await pack.configure({ locked: false });
+  try {
+    await Macro.implementation.createDocuments(
+      missing.map((macro) => ({
+        name: macro.name,
+        type: "script",
+        img: macro.img,
+        command: macro.command,
+        scope: "global",
+      })),
+      { pack: PACK_MACROS }
+    );
+    ui.notifications.info(`[Jungle Juice] ${missing.length} macro(s) de ambiente adicionada(s).`);
+  } finally {
+    if (wasLocked) await pack.configure({ locked: true });
+  }
 }
 
 async function seedScenePack() {

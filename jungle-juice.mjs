@@ -14,6 +14,7 @@ import {
 import { registerTokenBars } from "./module/token-bars.mjs";
 import { registerCombatTrackerUi } from "./module/combat-tracker-ui.mjs";
 import { registerActorDirectory } from "./module/actor-directory.mjs";
+import { registerApi } from "./module/api.mjs";
 
 Hooks.once("init", () => {
   console.log(`${SYSTEM_ID} | Inicializando sistema Jungle Juice RPG`);
@@ -80,6 +81,7 @@ Hooks.on("updateActor", async (actor, changed, options) => {
 });
 
 Hooks.once("ready", async () => {
+  registerApi();
   console.log(`${SYSTEM_ID} | Sistema pronto`);
   await migrateAllActorItems();
 });

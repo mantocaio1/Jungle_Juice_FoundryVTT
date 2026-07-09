@@ -89,7 +89,7 @@ function checkSyntax() {
 
 function checkCompanionData() {
   const dataDir = join(ROOT, "companion/module/data");
-  const expected = ["factions.mjs", "npcs.mjs", "bestiary.mjs", "gm-macros.mjs", "scenes.mjs"];
+  const expected = ["factions.mjs", "npcs.mjs", "bestiary.mjs", "gm-macros.mjs", "environment-macros.mjs", "scenes.mjs"];
   for (const file of expected) {
     const full = join(dataDir, file);
     if (!existsSync(full)) fail(`dado do companion ausente — ${file}`);
