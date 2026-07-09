@@ -318,4 +318,92 @@ export const NPCS = [
       }
     ),
   },
+  {
+    name: "Informante de Beco",
+    img: "icons/svg/mystery-man.svg",
+    system: buildNpcSystem(
+      { for: 1, agi: 3, res: 2, men: 3, per: 4, pre: 2, int: 3 },
+      {
+        insect: "Barata",
+        faction: "Stray Dogs",
+        insanity: 35,
+        origin: "<p>Sobrevivente urbano que vende informação para quem paga — ou para quem não parece da Pet Shop.</p>",
+        motivation: "<p>Ficar vivo e manter os contatos do submundo.</p>",
+        abilities: [
+          {
+            name: "Ouvido no Asfalto",
+            type: "passiva",
+            desc: "Sabe quem passou, quem sumiu e quem está sendo caçado.",
+            weakness: "Some se o preço não valer o risco.",
+            damage: "",
+          },
+        ],
+        items: [
+          { name: "Rádio quebrado", tier: "1", desc: "Capta frequências estranhas às vezes." },
+          { name: "", tier: "1", desc: "" },
+        ],
+      }
+    ),
+  },
+  {
+    name: "Médico de Plantão",
+    img: "icons/svg/hospital.svg",
+    system: buildNpcSystem(
+      { for: 1, agi: 2, res: 2, men: 4, per: 3, pre: 2, int: 4 },
+      {
+        insect: "",
+        faction: "NEST",
+        insanity: 15,
+        origin: "<p>Profissional de emergência que já viu demais. Desconfia de ferimentos 'impossíveis'.</p>",
+        motivation: "<p>Salvar vidas — sem perguntas desnecessárias, até certo ponto.</p>",
+        abilities: [
+          {
+            name: "Primeiros Socorros",
+            type: "ativa_l",
+            desc: "Estabiliza Morrendo ou recupera 1d4 HP.",
+            weakness: "Recusa tratar alguém claramente infectado em público.",
+            damage: "",
+          },
+        ],
+        items: [
+          { name: "Kit cirúrgico", tier: "2", desc: "Cura 1d6 com tempo." },
+          { name: "Máscara e luvas", tier: "1", desc: "Proteção básica." },
+        ],
+      }
+    ),
+  },
+  {
+    name: "Oráculo Hollow",
+    img: "icons/svg/aura.svg",
+    system: buildNpcSystem(
+      { for: 1, agi: 2, res: 2, men: 5, per: 4, pre: 1, int: 3 },
+      {
+        insect: "Mariposa",
+        faction: "Hollow",
+        insanity: 60,
+        origin: "<p>Líder espiritual menor. Interpreta sinais do Complex como revelação.</p>",
+        motivation: "<p>Guiar os perdidos — mesmo que o caminho seja a loucura.</p>",
+        abilities: [
+          {
+            name: "Visão Fragmentada",
+            type: "ativa_l",
+            desc: "Revela pista críptica. Alvo ganha +5 Insanidade.",
+            weakness: "Confunde aliados e inimigos após usar.",
+            damage: "",
+          },
+          {
+            name: "Transe Profético",
+            type: "passiva",
+            desc: "Imune a Alucinado enquanto em transe.",
+            weakness: "Inconsciente a ataques físicos no transe.",
+            damage: "",
+          },
+        ],
+        items: [
+          { name: "Incenso ritual", tier: "1", desc: "Marca locais de poder." },
+          { name: "", tier: "1", desc: "" },
+        ],
+      }
+    ),
+  },
 ];

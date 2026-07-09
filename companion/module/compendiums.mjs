@@ -23,6 +23,7 @@ export async function seedCompendiums() {
   await seedBestiaryPack();
   await seedMacroPack();
   await seedScenePack();
+  await ensureNpcPack();
   await ensureMacroPack();
 }
 
@@ -79,6 +80,33 @@ async function seedNpcPack() {
     await Actor.implementation.createDocuments(data, { pack: PACK_NPCS });
     ui.notifications.info(`[Jungle Juice] Compêndio "NPCs" populado (${NPCS.length} entradas).`);
   });
+}
+
+/** Adiciona NPCs novos em mundos que já tinham o compêndio populado. */
+async function ensureNpcPack() {
+  const pack = game.packs.get(PACK_NPCS);
+  if (!pack || pack.index.size === 0) return;
+
+  const existing = new Set((await pack.getDocuments()).map((doc) => doc.name));
+  const missing = NPCS.filter((npc) => !existing.has(npc.name));
+  if (!missing.length) return;
+
+  const wasLocked = pack.locked;
+  if (wasLocked) await pack.configure({ locked: false });
+  try {
+    await Actor.implementation.createDocuments(
+      missing.map((npc) => ({
+        name: npc.name,
+        type: "npc",
+        img: npc.img,
+        system: npc.system,
+      })),
+      { pack: PACK_NPCS }
+    );
+    ui.notifications.info(`[Jungle Juice] ${missing.length} NPC(s) adicionado(s) ao compêndio.`);
+  } finally {
+    if (wasLocked) await pack.configure({ locked: true });
+  }
 }
 
 async function seedBestiaryPack() {

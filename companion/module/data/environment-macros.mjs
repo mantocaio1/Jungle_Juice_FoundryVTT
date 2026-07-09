@@ -100,4 +100,38 @@ await ChatMessage.create({
   content: \`<div class="jungle-juice-card"><p>\${text.trim()}</p></div>\`,
 });`,
   },
+  {
+    name: "Ambiente — Relógio avançar",
+    img: "icons/svg/clock.svg",
+    command: `${JJ}
+if (!game.user.isGM) return ui.notifications.warn("Apenas o Mestre pode avançar relógios.");
+const clocks = jj.clocks?.get?.() ?? [];
+if (!clocks.length) return ui.notifications.warn("Nenhum relógio nesta cena. Use o painel ⏱ no mapa.");
+const options = clocks.map(c => \`<option value="\${c.id}">\${c.name} (\${c.filled}/\${c.segments})</option>\`).join("");
+const picked = await foundry.applications.api.DialogV2.prompt({
+  window: { title: "Avançar relógio" },
+  content: \`<label>Relógio<select name="id" style="width:100%">\${options}</select></label>\`,
+  ok: { label: "Avançar", callback: (ev, btn) => new foundry.applications.ux.FormDataExtended(btn.form).object.id },
+  rejectClose: false,
+});
+if (!picked) return;
+await jj.clocks.advance(picked, 1);`,
+  },
+  {
+    name: "Ambiente — Relógio resetar",
+    img: "icons/svg/hourglass.svg",
+    command: `${JJ}
+if (!game.user.isGM) return ui.notifications.warn("Apenas o Mestre pode resetar relógios.");
+const clocks = jj.clocks?.get?.() ?? [];
+if (!clocks.length) return ui.notifications.warn("Nenhum relógio nesta cena.");
+const options = clocks.map(c => \`<option value="\${c.id}">\${c.name} (\${c.filled}/\${c.segments})</option>\`).join("");
+const picked = await foundry.applications.api.DialogV2.prompt({
+  window: { title: "Resetar relógio" },
+  content: \`<label>Relógio<select name="id" style="width:100%">\${options}</select></label>\`,
+  ok: { label: "Resetar", callback: (ev, btn) => new foundry.applications.ux.FormDataExtended(btn.form).object.id },
+  rejectClose: false,
+});
+if (!picked) return;
+await jj.clocks.reset(picked);`,
+  },
 ];
