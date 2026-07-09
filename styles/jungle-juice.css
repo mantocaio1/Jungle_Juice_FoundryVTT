@@ -770,3 +770,60 @@
   font-size: 11px;
   color: #5a7563;
 }
+
+/* Visão jogador vs mestre */
+.jungle-juice.sheet.actor .insanity-label.player-vague,
+.jungle-juice.sheet.actor .runaway-status.player-vague {
+  color: #7a8f82;
+  font-style: italic;
+}
+
+.jungle-juice.sheet.actor .condition-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #2a4a30;
+  background: #0a120c;
+  color: #8aa892;
+  font-size: 12px;
+}
+
+.jungle-juice.sheet.actor .condition-tag.active {
+  border-color: #c44;
+  background: #2a1010;
+  color: #f88;
+}
+
+.jungle-juice.sheet.actor .field.gm-notes {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #3a5a40;
+}
+
+.jungle-juice.sheet.actor .field.gm-notes label small {
+  color: #7a9f82;
+}
+
+.jungle-juice.sheet.actor .field.gm-notes textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: 8px 10px;
+  border: 1px solid #2a4a30;
+  border-radius: 4px;
+  background: #060c08;
+  color: #c8dcc8;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.jungle-juice.sheet.actor .field.gm-notes textarea:focus {
+  outline: none;
+  border-color: #4CAF70;
+}
+
+.jungle-juice.sheet.actor input[readonly] {
+  opacity: 0.85;
+  cursor: default;
+}

@@ -1,7 +1,8 @@
 import { SYSTEM_ID } from "./config.mjs";
-import { shortRest, longRest, applyHealing, adjustInsanity, stabilizeDying } from "./healing.mjs";
-import { rollTest, applyDamage, applyDamageFromRoll } from "./dice.mjs";
+import { shortRest, longRest, applyHealing, adjustInsanity, stabilizeDying, stabilizeAlly, useHealingItem } from "./healing.mjs";
+import { rollTest, applyDamage, applyDamageFromRoll, rollInitiative, rollDyingSave, rollAttack } from "./dice.mjs";
 import { toggleCondition, applyCondition, removeCondition, tryRecoverCondition } from "./conditions.mjs";
+import { performAttack, performQuickAttack, getTargetedActor } from "./player-actions.mjs";
 
 /**
  * Resolve o ator alvo de uma interação de cena (macro, Active Tile, etc.).
@@ -61,5 +62,13 @@ export function registerApi() {
     applyDamage,
     applyDamageFromRoll,
     stabilizeDying,
+    stabilizeAlly,
+    useHealingItem,
+    rollInitiative,
+    rollDyingSave,
+    rollAttack,
+    getTargetedActor,
+    performAttack,
+    performQuickAttack,
   };
 }

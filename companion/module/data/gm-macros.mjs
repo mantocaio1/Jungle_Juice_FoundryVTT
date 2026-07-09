@@ -258,4 +258,33 @@ await ChatMessage.create({
 });
 ui.notifications.info("Evento de horror aplicado.");`,
   },
+  {
+    name: "Combate — NPC atacar alvo (rápido)",
+    img: "icons/svg/creature.svg",
+    command: `${JJ}
+const attacker = canvas.tokens.controlled[0]?.actor;
+const target = jj.getTargetedActor();
+if (!attacker) return ui.notifications.warn("Selecione o token do NPC/inimigo.");
+if (!target) return ui.notifications.warn("Selecione o alvo com T (targeting).");
+const form = await foundry.applications.api.DialogV2.prompt({
+  window: { title: "Ataque do NPC" },
+  content: \`<div style="display:flex;flex-direction:column;gap:8px">
+    <label>Atributo<select name="attr">
+      <option value="for">FOR — corpo a corpo</option>
+      <option value="pre">PRE — à distância</option>
+      <option value="agi">AGI — rápido</option>
+    </select></label>
+    <label>Dano <input name="damage" type="text" value="1d6" style="width:100%"/></label>
+  </div>\`,
+  ok: { label: "Atacar", callback: (ev, btn) => new foundry.applications.ux.FormDataExtended(btn.form).object },
+  rejectClose: false,
+});
+if (!form?.damage?.trim()) return;
+await jj.performQuickAttack(attacker, {
+  attrKey: form.attr,
+  damage: form.damage.trim(),
+  targetActor: target,
+  label: attacker.name,
+});`,
+  },
 ];

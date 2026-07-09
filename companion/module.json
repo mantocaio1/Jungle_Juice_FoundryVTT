@@ -2,7 +2,7 @@
   "id": "jungle-juice-compendia",
   "title": "Jungle Juice — Compêndios",
   "description": "Facções, NPCs, bestiário, macros do mestre e templates de cenas para Jungle Juice RPG.",
-  "version": "1.4.1",
+  "version": "1.6.0",
   "compatibility": {
     "minimum": "14",
     "verified": "14.364"
@@ -66,6 +66,16 @@
       "type": "Macro",
       "ownership": {
         "PLAYER": "NONE",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "macros-jogador",
+      "label": "Macros do Jogador",
+      "path": "packs/macros-jogador",
+      "type": "Macro",
+      "ownership": {
+        "PLAYER": "OBSERVER",
         "ASSISTANT": "OWNER"
       }
     },

@@ -1,4 +1,4 @@
-import { ATTRIBUTES, ABILITY_TYPES, ITEM_TIERS, getInsanityState, hasDisadvantage } from "./config.mjs";
+import { ATTRIBUTES, ABILITY_TYPES, ITEM_TIERS, getInsanityState, hasDisadvantage, autoFailsAuditoryTest } from "./config.mjs";
 import { spendTurnAction } from "./combat-actions.mjs";
 
 /**
@@ -21,17 +21,28 @@ function d20Formula(actor, attrKey, attr, isAttack = false) {
  * @param {string} options.attrKey
  * @param {number} options.target
  * @param {string} [options.label]
+ * @param {boolean} [options.auditory] teste de percepção auditiva (Surdo falha)
  */
-export async function rollTest({ actor, attrKey, target, label }) {
-  const attr = actor.system.attributes[attrKey] ?? 0;
+export async function rollTest({ actor, attrKey, target, label, auditory = false }) {
   const attrInfo = ATTRIBUTES[attrKey];
+  const testLabel = label ?? "Teste";
+
+  if (auditory && autoFailsAuditoryTest(actor.statuses ?? new Set())) {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      content: `<div class="jungle-juice-card"><p>❌ <strong>Falha automática</strong> — Surdo não percebe sons (${testLabel}).</p></div>`,
+    });
+    return { roll: null, success: false, total: 0, target, disadvantage: false, autoFail: true };
+  }
+
+  const attr = actor.system.attributes[attrKey] ?? 0;
   const { formula, disadvantage } = d20Formula(actor, attrKey, attr);
   const roll = await new Roll(formula).evaluate();
   const success = roll.total >= target;
 
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `${label ?? "Teste"} — ${attrInfo?.abbr ?? attrKey.toUpperCase()} vs CD ${target}${disadvantage ? " · Desvantagem" : ""}`,
+    flavor: `${testLabel} — ${attrInfo?.abbr ?? attrKey.toUpperCase()} vs CD ${target}${disadvantage ? " · Desvantagem" : ""}`,
   });
 
   return { roll, success, total: roll.total, target, disadvantage };

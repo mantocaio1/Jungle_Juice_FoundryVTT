@@ -4,6 +4,7 @@ import {
   hasDisadvantage,
   getInsanityState,
   getCondition,
+  autoFailsAuditoryTest,
   TURN_ACTIONS,
   ITEM_TIERS,
   ATTRIBUTE_POINTS,
@@ -47,6 +48,12 @@ describe("config", () => {
       TURN_ACTIONS.map((a) => a.id),
       ["principal", "movement", "support", "free"]
     );
+  });
+
+  it("autoFailsAuditoryTest — Surdo falha percepção auditiva", () => {
+    assert.equal(autoFailsAuditoryTest(new Set(["deafened"])), true);
+    assert.equal(autoFailsAuditoryTest(new Set(["blinded"])), false);
+    assert.equal(autoFailsAuditoryTest(new Set()), false);
   });
 
   it("constantes de criação", () => {

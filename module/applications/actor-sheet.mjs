@@ -11,30 +11,24 @@ import {
 } from "../config.mjs";
 import {
   rollTest,
-  rollAttack,
   rollInitiative,
   rollDyingSave,
   useAbility,
-  applyAbilityInsanity,
-  rollDamage,
-  applyDamage,
-  appendItemBonus,
 } from "../dice.mjs";
 import { toggleCondition, tryRecoverCondition } from "../conditions.mjs";
 import { unlockRunaway, activateRunaway, exitRunaway, sendHallucination } from "../insanity.mjs";
 import { useHealingItem, shortRest, longRest, stabilizeDying } from "../healing.mjs";
+import { performAttack } from "../player-actions.mjs";
 import {
   getTurnActionsState,
   toggleTurnAction,
   resetTurnActions,
-  spendTurnAction,
 } from "../combat-actions.mjs";
 import {
   getGearItems,
   migrateLegacyItems,
   createGearItem,
   deleteGearItem,
-  itemRollData,
 } from "../items.mjs";
 import { applyFichaToActor, exportFichaJson, promptFichaJson } from "../import-ficha.mjs";
 
@@ -131,6 +125,7 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
     }));
 
     context.isGM = game.user.isGM;
+    context.showGmDetails = game.user.isGM;
     context.canHallucinate = system.canHallucinate ?? false;
     context.canRunaway = system.canRunaway ?? false;
     context.isCollapse = system.isCollapse ?? false;
@@ -249,147 +244,15 @@ export class JungleJuiceActorSheet extends HandlebarsApplicationMixin(ActorSheet
 
   /** @param {PointerEvent} event */
   static async #onRollTest(event, target) {
-    const sheet = this;
     const attrKey = target.dataset.attr;
     const targetCd = Number(target.dataset.cd ?? 12);
-    await rollTest({ actor: sheet.actor, attrKey, target: targetCd });
+    const auditory = target.dataset.auditory === "true";
+    await rollTest({ actor: this.actor, attrKey, target: targetCd, auditory });
   }
 
   /** @param {PointerEvent} event */
   static async #onRollAttack(event, target) {
-    const sheet = this;
-    const presetAttr = target.dataset.attr;
-    const abilities = sheet.actor.system.abilities ?? [];
-    const items = getGearItems(sheet.actor).filter((item) => item.name?.trim());
-
-    // Alvo selecionado (targeting) do usuário atual.
-    const targetTokens = Array.from(game.user.targets);
-    const targetActor = targetTokens[0]?.actor ?? null;
-    const targetAc = targetActor?.system.ac.value ?? null;
-
-    if (targetTokens.length > 1) {
-      ui.notifications.info("Múltiplos alvos selecionados — usando o primeiro.");
-    }
-
-    const attrOptions = Object.entries(ATTRIBUTES)
-      .map(
-        ([key, info]) =>
-          `<option value="${key}" ${key === presetAttr ? "selected" : ""}>${info.abbr} — ${info.label}</option>`
-      )
-      .join("");
-
-    const abilityOptions = abilities
-      .map((ab, i) => {
-        const type = ABILITY_TYPES[ab.type] ?? ABILITY_TYPES.passiva;
-        const cost = type.insanity ? ` · +${type.insanity} ins` : "";
-        const dmg = ab.damage?.trim() ? ` · ${ab.damage.trim()}` : "";
-        return `<option value="${i}">${ab.name?.trim() || "Sem nome"} (${type.label}${cost}${dmg})</option>`;
-      })
-      .join("");
-
-    const itemOptions = items
-      .map((item) => {
-        const tier = ITEM_TIERS[item.system.tier ?? "1"];
-        return `<option value="${item.id}">${item.name.trim()} (Tier ${item.system.tier} ${tier?.bonus ?? ""})</option>`;
-      })
-      .join("");
-
-    const itemBlock = items.length
-      ? `<div class="form-group">
-           <label>Bônus de item no dano</label>
-           <select name="item">
-             <option value="-1">Nenhum</option>
-             ${itemOptions}
-           </select>
-         </div>`
-      : "";
-
-    const targetBlock = targetActor
-      ? `<p class="jj-target">🎯 Alvo: <strong>${targetActor.name}</strong> (AC ${targetAc} · HP ${targetActor.system.hp.value}/${targetActor.system.hp.max})</p>`
-      : `<div class="form-group">
-           <label>AC do alvo <em>(nenhum alvo selecionado)</em></label>
-           <input type="number" name="ac" value="12"/>
-         </div>`;
-
-    const content = `
-      <div class="jj-attack-dialog">
-        ${targetBlock}
-        <div class="form-group">
-          <label>Atributo do ataque</label>
-          <select name="attr">${attrOptions}</select>
-        </div>
-        <div class="form-group">
-          <label>Usar habilidade do Complex?</label>
-          <select name="ability">
-            <option value="-1">Nenhuma (ataque comum)</option>
-            ${abilityOptions}
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Dano (opcional — usado se não houver dado na habilidade)</label>
-          <input type="text" name="damage" placeholder="ex: 1d6 + 2"/>
-        </div>
-        ${itemBlock}
-      </div>`;
-
-    const data = await foundry.applications.api.DialogV2.wait({
-      window: { title: "Atacar" },
-      content,
-      buttons: [
-        {
-          action: "attack",
-          label: "Atacar",
-          default: true,
-          callback: (ev, button) => new foundry.applications.ux.FormDataExtended(button.form).object,
-        },
-        { action: "cancel", label: "Cancelar", callback: () => null },
-      ],
-      rejectClose: false,
-    });
-
-    if (!data) return;
-
-    await spendTurnAction(sheet.actor, "principal");
-
-    const attrKey = data.attr ?? presetAttr;
-    const ac = targetActor ? targetAc : Number(data.ac ?? 12);
-    const abilityIndex = Number(data.ability ?? -1);
-    const ability = abilityIndex >= 0 ? abilities[abilityIndex] : null;
-    const attackItemDoc = data.item && data.item !== "-1" ? sheet.actor.items.get(data.item) : null;
-    const attackItem = itemRollData(attackItemDoc);
-
-    // Rola o ataque contra o AC do alvo.
-    const { hit, natural20 } = await rollAttack({ actor: sheet.actor, attrKey, ac });
-
-    // Custo de insanidade da habilidade, se houver.
-    if (ability) await applyAbilityInsanity(sheet.actor, ability);
-
-    if (!hit) return;
-
-    // Determina a fórmula de dano: dado da habilidade ou campo manual + bônus de item.
-    let damageFormula = (ability?.damage?.trim() || data.damage?.trim() || "").trim();
-    damageFormula = appendItemBonus(damageFormula, attackItem);
-
-    if (!damageFormula || !Roll.validate(damageFormula)) return;
-
-    const label = ability?.name?.trim() || attackItem?.name?.trim() || "Ataque";
-    const damage = await rollDamage(sheet.actor, damageFormula, label);
-
-    if (targetActor) {
-      if (targetActor.isOwner) {
-        const newHp = await applyDamage(targetActor, damage);
-        await ChatMessage.create({
-          speaker: ChatMessage.getSpeaker({ actor: sheet.actor }),
-          content: `<div class="jungle-juice-card"><p>💥 <strong>${damage}</strong> de dano em <strong>${targetActor.name}</strong>${natural20 ? " (Natural 20!)" : ""} → HP ${newHp}/${targetActor.system.hp.max}</p></div>`,
-        });
-      } else {
-        // Sem permissão para alterar o alvo: registra para o Mestre aplicar.
-        await ChatMessage.create({
-          speaker: ChatMessage.getSpeaker({ actor: sheet.actor }),
-          content: `<div class="jungle-juice-card"><p>💥 <strong>${damage}</strong> de dano em <strong>${targetActor.name}</strong>${natural20 ? " (Natural 20!)" : ""} — <em>aguardando o Mestre aplicar (sem permissão).</em></p></div>`,
-        });
-      }
-    }
+    await performAttack(this.actor, { presetAttr: target.dataset.attr });
   }
 
   /** @param {PointerEvent} event */

@@ -26,6 +26,24 @@ function getHudMount() {
   return document.getElementById("interface") ?? document.body;
 }
 
+/** @param {object} clock */
+async function notifyClockComplete(clock) {
+  ui.notifications.warn(`Relógio "${clock.name}" completo!`);
+  const content = `<div class="jungle-juice-card"><h3>⏱ Relógio completo</h3><p><strong>${foundry.utils.escapeHTML(clock.name)}</strong> encheu todos os segmentos.</p></div>`;
+  const msg = { content };
+  if (!clock.visibleToPlayers) {
+    msg.whisper = game.users.filter((u) => u.isGM).map((u) => u.id);
+  }
+  await ChatMessage.create(msg);
+}
+
+/** @param {object} clock @param {number} prevFilled */
+async function onClockFilled(clock, prevFilled) {
+  if (prevFilled < clock.segments && clock.filled >= clock.segments) {
+    await notifyClockComplete(clock);
+  }
+}
+
 function segmentHtml(filled, total) {
   const parts = [];
   for (let i = 0; i < total; i++) {
@@ -135,30 +153,24 @@ async function onClockHudClick(event) {
   const clock = clocks.find((c) => c.id === id);
   if (!clock) return;
 
-  if (action === "inc") clock.filled = Math.min(clock.segments, clock.filled + 1);
-  else if (action === "dec") clock.filled = Math.max(0, clock.filled - 1);
+  if (action === "inc") {
+    const prev = clock.filled;
+    clock.filled = Math.min(clock.segments, clock.filled + 1);
+    await saveClocks(clocks, scene);
+    await onClockFilled(clock, prev);
+    return;
+  }
+  if (action === "dec") clock.filled = Math.max(0, clock.filled - 1);
   else if (action === "toggle-vis") clock.visibleToPlayers = !clock.visibleToPlayers;
   else if (action === "remove") {
     await saveClocks(
       clocks.filter((c) => c.id !== id),
       scene
     );
-    if (clock.filled >= clock.segments) {
-      ui.notifications.info(`Relógio "${clock.name}" completou antes de ser removido.`);
-    }
     return;
   }
 
   await saveClocks(clocks, scene);
-
-  if (clock.filled >= clock.segments) {
-    ui.notifications.warn(`Relógio "${clock.name}" completo!`);
-    const content = `<div class="jungle-juice-card"><h3>⏱ Relógio completo</h3><p><strong>${foundry.utils.escapeHTML(clock.name)}</strong> encheu todos os segmentos.</p></div>`;
-    await ChatMessage.create({
-      content,
-      whisper: clock.visibleToPlayers ? [] : ChatMessage.getWhisperRecipients("GM"),
-    });
-  }
 }
 
 /** Relógios de cena visuais (investigação / tensão). */
@@ -173,8 +185,10 @@ export function registerSceneClocks() {
         const clocks = getClocks(scene);
         const clock = clocks.find((c) => c.id === id);
         if (!clock) return;
+        const prev = clock.filled;
         clock.filled = Math.min(clock.segments, clock.filled + amount);
         await saveClocks(clocks, scene);
+        await onClockFilled(clock, prev);
       },
       reset: async (id) => {
         const scene = canvas?.scene;

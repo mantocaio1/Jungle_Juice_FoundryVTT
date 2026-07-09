@@ -30,6 +30,7 @@ export class CharacterModel extends foundry.abstract.TypeDataModel {
       insect: new StringField({ required: true, blank: true, initial: "" }),
       origin: new HTMLField({ required: true, blank: true, initial: "" }),
       motivation: new HTMLField({ required: true, blank: true, initial: "" }),
+      gmNotes: new StringField({ required: true, blank: true, initial: "" }),
       faction: new StringField({ required: true, blank: false, initial: "NEST" }),
 
       attributes: new SchemaField({

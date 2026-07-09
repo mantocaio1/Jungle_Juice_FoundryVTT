@@ -37,11 +37,12 @@ export async function adjustInsanity(actor, delta) {
 
 /**
  * Usa um item equipado como cura — rola o dado do tier (+1d4/+1d6/+1d8).
- * @param {Actor} actor
+ * @param {Actor} healer quem usa o item (gasta ação de Suporte)
  * @param {string} itemId ID do documento Item embutido
+ * @param {Actor} [target] alvo da cura (padrão: o próprio healer)
  */
-export async function useHealingItem(actor, itemId) {
-  const item = actor.items.get(itemId);
+export async function useHealingItem(healer, itemId, target = healer) {
+  const item = healer.items.get(itemId);
   if (!item || item.type !== "gear") {
     ui.notifications.warn("Item não encontrado.");
     return;
@@ -51,23 +52,37 @@ export async function useHealingItem(actor, itemId) {
     return;
   }
 
-  await spendTurnAction(actor, "support");
+  await spendTurnAction(healer, "support");
 
   const tier = ITEM_TIERS[item.system.tier] ?? ITEM_TIERS["1"];
   const roll = await new Roll(tier.heal).evaluate();
   const healed = roll.total;
-  const { newHp, stabilized } = await applyHealing(actor, healed);
+
+  const selfHeal = target.id === healer.id;
+  const canApply = selfHeal || target.isOwner || game.user.isGM;
 
   await roll.toMessage({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `Cura — ${item.name.trim()} (Tier ${item.system.tier}: ${tier.label})`,
+    speaker: ChatMessage.getSpeaker({ actor: healer }),
+    flavor: selfHeal
+      ? `Cura — ${item.name.trim()} (Tier ${item.system.tier}: ${tier.label})`
+      : `Cura em ${target.name} — ${item.name.trim()} (Tier ${item.system.tier})`,
   });
 
+  if (!canApply) {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: healer }),
+      content: `<div class="jungle-juice-card"><p>💚 <strong>+${healed}</strong> HP curados em <strong>${target.name}</strong> — <em>aguardando o Mestre aplicar (sem permissão).</em></p></div>`,
+    });
+    return { healed, pending: true };
+  }
+
+  const { newHp, stabilized } = await applyHealing(target, healed);
   const stableLine = stabilized ? `<p>🩹 <em>Estabilizado</em> — saiu do estado Morrendo.</p>` : "";
+  const whoLine = selfHeal ? "" : `<p><em>${healer.name} curou ${target.name}</em></p>`;
 
   await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    content: `<div class="jungle-juice-card"><p>💚 <strong>+${healed}</strong> HP → ${newHp}/${actor.system.hp.max}</p>${stableLine}</div>`,
+    speaker: ChatMessage.getSpeaker({ actor: healer }),
+    content: `<div class="jungle-juice-card">${whoLine}<p>💚 <strong>+${healed}</strong> HP → ${newHp}/${target.system.hp.max}</p>${stableLine}</div>`,
   });
 
   return { healed, newHp, stabilized };
@@ -138,6 +153,49 @@ export async function stabilizeDying(actor) {
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor }),
       content: `<div class="jungle-juice-card"><p>❌ Falhou em estabilizar (${total} vs CD ${STABILIZE_DC}). Continua Morrendo.</p></div>`,
+    });
+  }
+
+  return { success };
+}
+
+/**
+ * Aliado tenta estabilizar personagem Morrendo (healer gasta Suporte e rola RES).
+ * @param {Actor} healer
+ * @param {Actor} target
+ */
+export async function stabilizeAlly(healer, target) {
+  if (target.system.hp.value > 0) {
+    ui.notifications.warn("Alvo não está Morrendo.");
+    return;
+  }
+
+  await spendTurnAction(healer, "support");
+
+  const { success, total } = await rollTest({
+    actor: healer,
+    attrKey: STABILIZE_ATTR,
+    target: STABILIZE_DC,
+    label: `Estabilizar — ${target.name}`,
+  });
+
+  const canApply = target.isOwner || game.user.isGM;
+
+  if (success && canApply) {
+    await target.update({ "system.hp.value": 1 });
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: healer }),
+      content: `<div class="jungle-juice-card"><p>🩹 <strong>${healer.name}</strong> estabilizou <strong>${target.name}</strong>! HP → 1/${target.system.hp.max}</p></div>`,
+    });
+  } else if (success) {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: healer }),
+      content: `<div class="jungle-juice-card"><p>🩹 Estabilização bem-sucedida em <strong>${target.name}</strong> — <em>aguardando o Mestre aplicar HP.</em></p></div>`,
+    });
+  } else {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: healer }),
+      content: `<div class="jungle-juice-card"><p>❌ <strong>${healer.name}</strong> falhou em estabilizar <strong>${target.name}</strong> (${total} vs CD ${STABILIZE_DC}).</p></div>`,
     });
   }
 

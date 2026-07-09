@@ -14,6 +14,8 @@ companion/packs/bestiario/*
 !companion/packs/bestiario/.gitkeep
 companion/packs/macros-mestre/*
 !companion/packs/macros-mestre/.gitkeep
+companion/packs/macros-jogador/*
+!companion/packs/macros-jogador/.gitkeep
 companion/packs/cenas/*
 !companion/packs/cenas/.gitkeep
 

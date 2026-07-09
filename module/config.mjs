@@ -234,3 +234,8 @@ export function getInsanityState(value) {
   }
   return INSANITY_THRESHOLDS.at(-1);
 }
+
+/** Surdo falha automaticamente em testes de percepção auditiva. */
+export function autoFailsAuditoryTest(statuses) {
+  return statuses?.has("deafened") ?? false;
+}

@@ -19,10 +19,16 @@
       <div class="resource insanity">
         <label>Insanidade</label>
         <div class="resource-content">
+          {{#if showGmDetails}}
           <button type="button" data-action="adjustInsanity" data-delta="-5">−</button>
-          <input type="number" name="system.insanity.value" value="{{system.insanity.value}}" min="0" max="100"/>
+          {{/if}}
+          <input type="number" name="system.insanity.value" value="{{system.insanity.value}}" min="0" max="100" {{#unless showGmDetails}}readonly{{/unless}}/>
+          {{#if showGmDetails}}
           <button type="button" data-action="adjustInsanity" data-delta="5">+</button>
           <span class="insanity-label" style="color: {{system.insanityColor}}">{{system.insanityLabel}}</span>
+          {{else}}
+          <span class="insanity-label player-vague" title="Apenas o Mestre vê o estado mental detalhado">/100</span>
+          {{/if}}
         </div>
       </div>
     </div>
@@ -60,6 +66,10 @@
       {{editor system.motivation target="system.motivation" engine="prosemirror" button=true editable=editable}}
     </div>
     {{#if isGM}}
+    <div class="field gm-notes">
+      <label>Notas do Mestre <small>(só você vê)</small></label>
+      <textarea name="system.gmNotes" rows="6" placeholder="Anotações privadas sobre este personagem ou NPC...">{{system.gmNotes}}</textarea>
+    </div>
     <div class="ficha-io">
       <button type="button" data-action="importFicha">📥 Importar JSON da ficha</button>
       <button type="button" data-action="exportFicha">📤 Exportar JSON</button>
@@ -147,7 +157,12 @@
     <h3>Testes (D20 + Atributo vs CD)</h3>
     <div class="roll-grid">
       {{#each config.attributes as |attr key|}}
+      {{#if (eq key "per")}}
+      <button type="button" data-action="rollTest" data-attr="{{key}}" data-cd="12">PER CD 12</button>
+      <button type="button" data-action="rollTest" data-attr="{{key}}" data-cd="12" data-auditory="true" title="Percepção auditiva — Surdo falha automaticamente">👂 PER auditiva CD 12</button>
+      {{else}}
       <button type="button" data-action="rollTest" data-attr="{{key}}" data-cd="12">{{attr.abbr}} CD 12</button>
+      {{/if}}
       {{/each}}
     </div>
     <h3>Ataque</h3>
@@ -196,9 +211,13 @@
     <div class="conditions-grid">
       {{#each conditions as |cond|}}
       <div class="condition-row">
+        {{#if ../showGmDetails}}
         <button type="button" class="condition-toggle {{#if cond.active}}active{{/if}}" data-action="toggleCondition" data-condition="{{cond.id}}" title="{{cond.hint}}">
           {{cond.name}}
         </button>
+        {{else}}
+        <span class="condition-tag {{#if cond.active}}active{{/if}}" title="{{cond.hint}}">{{cond.name}}</span>
+        {{/if}}
         {{#if cond.showRecover}}
         <button type="button" class="condition-recover" data-action="recoverCondition" data-condition="{{cond.id}}" title="Teste {{cond.recoveryLabel}} para remover">
           ↻ {{cond.recoveryLabel}}
@@ -210,9 +229,13 @@
 
     <h3>Insanidade &amp; Runaway</h3>
     <div class="runaway-box {{#if runawayActive}}is-active{{/if}}">
+      {{#if showGmDetails}}
       <p class="runaway-status" style="color: {{system.insanityColor}}">
         {{system.insanity.value}}/100 · {{system.insanityLabel}}
       </p>
+      {{else}}
+      <p class="runaway-status player-vague">Estado mental: <em>incerto</em></p>
+      {{/if}}
 
       {{#if canHallucinate}}
         {{#if isGM}}
