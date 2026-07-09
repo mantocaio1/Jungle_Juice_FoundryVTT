@@ -667,3 +667,106 @@
   text-align: center;
   line-height: 1.1;
 }
+
+/* ── Scene clocks (investigação / tensão) ── */
+.jj-scene-clocks {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 80;
+  min-width: 200px;
+  max-width: 280px;
+  background: rgba(8, 14, 10, 0.92);
+  border: 1px solid #1a2e1e;
+  border-radius: 10px;
+  padding: 10px;
+  font-family: "Courier New", monospace;
+  color: #c0d0b8;
+  pointer-events: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.jj-clocks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #4CAF70;
+  letter-spacing: 1px;
+}
+
+.jj-clocks-toolbar {
+  display: flex;
+  gap: 4px;
+}
+
+.jj-clocks-toolbar button,
+.jj-clock-actions button {
+  background: #0c1610;
+  border: 1px solid #1a2e1e;
+  color: #4CAF70;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.jj-clocks-toolbar button:hover,
+.jj-clock-actions button:hover {
+  border-color: #4CAF70;
+}
+
+.jj-clock {
+  background: #0c1610;
+  border: 1px solid #14231a;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 6px;
+}
+
+.jj-clock:last-child {
+  margin-bottom: 0;
+}
+
+.jj-clock-name {
+  font-size: 11px;
+  color: #8aaa84;
+  margin-bottom: 6px;
+}
+
+.jj-clock-segments {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.jj-clock-seg {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid #2a4a30;
+  background: #060c08;
+}
+
+.jj-clock-seg.filled {
+  background: #4CAF70;
+  border-color: #4CAF70;
+  box-shadow: 0 0 6px rgba(76, 175, 112, 0.35);
+}
+
+.jj-clock-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.jj-clocks-empty {
+  margin: 0;
+  font-size: 11px;
+  color: #5a7563;
+}

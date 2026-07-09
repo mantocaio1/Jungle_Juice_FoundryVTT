@@ -7,6 +7,7 @@ import { JungleJuiceItemSheet } from "./module/applications/item-sheet.mjs";
 import { registerHandlebarsHelpers } from "./module/helpers.mjs";
 import { registerConditions, applyStartOfTurnEffects } from "./module/conditions.mjs";
 import { registerActiveEffects } from "./module/active-effects.mjs";
+import { registerSceneClocks } from "./module/scene-clocks.mjs";
 import { onInsanityChange } from "./module/insanity.mjs";
 import {
   migrateAllActorItems,
@@ -23,6 +24,7 @@ Hooks.once("init", () => {
   registerHandlebarsHelpers();
   registerConditions();
   registerActiveEffects();
+  registerSceneClocks();
   registerTokenBars();
   registerCombatTrackerUi();
   registerActorDirectory();

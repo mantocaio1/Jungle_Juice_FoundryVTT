@@ -41,6 +41,7 @@ export async function longRestParty(actors = getPartyActors()) {
 /** API pública para macros, Monk's Active Tiles e módulos externos. */
 export function registerApi() {
   game.jungleJuice = {
+    ...(game.jungleJuice ?? {}),
     id: SYSTEM_ID,
     shortRest,
     longRest,
