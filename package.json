@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/smoke.mjs"
+    "test": "node tests/smoke.mjs",
+    "ficha:dev": "npm --prefix ficha run dev",
+    "ficha:build": "npm --prefix ficha run build"
   }
 }

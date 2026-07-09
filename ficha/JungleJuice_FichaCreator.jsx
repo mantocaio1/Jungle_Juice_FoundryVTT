@@ -26,6 +26,8 @@ const ITEM_TIERS = [
 const TIER_BONUS = { "1": "+1d4", "2": "+1d6", "3": "+1d8" };
 const TIER_NAME  = { "1": "Improvisado", "2": "Refinado", "3": "Especializado" };
 
+const FACTIONS = ["NEST", "Pet Shop", "Stray Dogs", "Hollow", "The Swarm", "Prometheus", "The Web", "Blackmoth"];
+
 const TOTAL_POINTS = 21;
 const MAX_ATTR = 7;
 const BASE_COMPLEX_PTS = 5;
@@ -34,9 +36,10 @@ const steps = ["Identidade", "Atributos", "Complex", "Itens", "Exportar"];
 
 export default function App() {
   const [step, setStep] = useState(0);
-  const [copied, setCopied] = useState(false);
+  const [copiedDiscord, setCopiedDiscord] = useState(false);
+  const [copiedJson, setCopiedJson] = useState(false);
   const [char, setChar] = useState({
-    name: "", insect: "", origin: "", motivation: "",
+    name: "", insect: "", faction: "NEST", origin: "", motivation: "",
     attrs: { for: 0, agi: 0, res: 0, men: 0, per: 0, pre: 0, int: 0 },
     abilities: [],
     extraWeaknesses: 0,
@@ -61,7 +64,7 @@ export default function App() {
 
   const addAbility = () => {
     if (char.abilities.length >= 6) return;
-    setChar(c => ({ ...c, abilities: [...c.abilities, { name: "", type: "passiva", desc: "", weakness: "" }] }));
+    setChar(c => ({ ...c, abilities: [...c.abilities, { name: "", type: "passiva", desc: "", weakness: "", damage: "" }] }));
   };
 
   const updAbility = (i, f, v) => setChar(c => {
@@ -85,8 +88,9 @@ export default function App() {
       : char.abilities.map((ab, i) => {
           const t = ABILITY_TYPES.find(t => t.value === ab.type);
           const insLine = t?.insanity > 0 ? `🌑 \`+${t.insanity} Insanidade\`` : `✨ \`Sem custo\``;
+          const dmgLine = ab.damage ? `  ·  dano \`${ab.damage}\`` : "";
           return [
-            `> 🔹 **${ab.name || "Sem nome"}**  •  *${t?.label}*  •  ${insLine}`,
+            `> 🔹 **${ab.name || "Sem nome"}**  •  *${t?.label}*  •  ${insLine}${dmgLine}`,
             `> ${ab.desc || "*Sem descrição.*"}`,
             `> ⚠️ *Fraqueza:* ${ab.weakness || "*Não definida.*"}`,
           ].join("\n");
@@ -108,7 +112,7 @@ export default function App() {
 ╚══════════════════════════════╝
 
 🪪 **${char.name || "Sem Nome"}**
-🐛 *Inseto:* ${char.insect || "*não definido*"}   ·   🏠 *Facção:* **NEST**
+🐛 *Inseto:* ${char.insect || "*não definido*"}   ·   🏠 *Facção:* **${char.faction}**
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊  **A T R I B U T O S**
@@ -138,10 +142,43 @@ ${itemsBlock}
 > 🎯 *Motivação:* ${char.motivation || "*Não definida.*"}`;
   };
 
-  const copy = () => {
-    navigator.clipboard.writeText(generateDiscord());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const generateJson = () => JSON.stringify({
+    version: 1,
+    name: char.name,
+    insect: char.insect,
+    faction: char.faction,
+    origin: char.origin,
+    motivation: char.motivation,
+    attrs: char.attrs,
+    abilities: char.abilities.map(a => ({
+      name: a.name,
+      type: a.type,
+      desc: a.desc,
+      weakness: a.weakness,
+      damage: a.damage || "",
+    })),
+    extraWeak: char.extraWeaknesses,
+    items: char.items,
+    insanity: char.insanity,
+  }, null, 2);
+
+  const copyText = (text, setter) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setter(true);
+      setTimeout(() => setter(false), 2000);
+    }).catch(() => setter(true));
+  };
+
+  const downloadJson = () => {
+    const blob = new Blob([generateJson()], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = (char.name || "ficha").replace(/\s+/g, "_") + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -194,6 +231,12 @@ ${itemsBlock}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
             <Field label="Nome" value={char.name} onChange={v => setChar(c => ({...c, name: v}))} placeholder="Como te chamam..." />
             <Field label="🐛 Inseto do Complex" value={char.insect} onChange={v => setChar(c => ({...c, insect: v}))} placeholder="Libélula, Escorpião, Formiga..." />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", color: "#2a4a30", fontSize: 10, letterSpacing: 1, marginBottom: 5, textTransform: "uppercase" }}>Facção</label>
+            <select value={char.faction} onChange={e => setChar(c => ({...c, faction: e.target.value}))} style={{ ...inp, width: "100%" }}>
+              {FACTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
           </div>
           <Field label="Origem / Background" value={char.origin} onChange={v => setChar(c => ({...c, origin: v}))} placeholder="Quem era você antes da infecção? Como aconteceu?" multi />
           <div style={{ marginTop: 12 }}>
@@ -276,6 +319,7 @@ ${itemsBlock}
                   <button onClick={() => rmAbility(i)} style={{ background: "#1a0808", border: "1px solid #3a1010", color: "#F44336", borderRadius: 4, padding: "6px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>✕</button>
                 </div>
                 <input value={ab.desc} onChange={e => updAbility(i, "desc", e.target.value)} placeholder="Descrição da habilidade..." style={{ ...inp, width: "100%", marginBottom: 8 }} />
+                <input value={ab.damage || ""} onChange={e => updAbility(i, "damage", e.target.value)} placeholder="Dado de dano (opcional, ex: 1d6)" style={{ ...inp, width: "100%", marginBottom: 8 }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ color: "#F5A623", fontSize: 11, whiteSpace: "nowrap" }}>⚠️ Fraqueza:</span>
                   <input value={ab.weakness} onChange={e => updAbility(i, "weakness", e.target.value)} placeholder="Limitação obrigatória..." style={{ ...inp, flex: 1 }} />
@@ -315,7 +359,10 @@ ${itemsBlock}
 
         {/* ── STEP 4: Export ── */}
         {step === 4 && <>
-          <Title icon="📤" text="Ficha para o Discord" />
+          <Title icon="📤" text="Exportar" />
+          <p style={{ color: "#2a4a30", fontSize: 11, marginBottom: 16 }}>
+            Discord: bloco de texto formatado. Foundry: JSON para importar na aba Identidade (GM) ou sidebar Atores.
+          </p>
 
           <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
             <StatMini emoji="❤️" label="HP" value={`${hp}/${hp}`} color="#F44336" />
@@ -330,28 +377,46 @@ ${itemsBlock}
             </div>
           </div>
 
+          <div style={{ color: "#4CAF70", fontSize: 11, letterSpacing: 1, marginBottom: 6 }}>FICHA PARA O DISCORD</div>
           <textarea readOnly value={generateDiscord()} style={{
-            width: "100%", minHeight: 480, background: "#060c08", border: "1px solid #1a2e1e",
+            width: "100%", minHeight: 280, maxHeight: 340, background: "#060c08", border: "1px solid #1a2e1e",
             borderRadius: 8, padding: 16, color: "#8aaa84", fontFamily: "'Courier New', monospace",
-            fontSize: 12, lineHeight: 1.8, resize: "vertical", outline: "none"
+            fontSize: 12, lineHeight: 1.8, resize: "vertical", outline: "none", marginBottom: 10
           }} />
-
-          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={copy} style={{
-              flex: 1, background: copied ? "#1a3a1a" : "#1a2e1e",
-              border: `1px solid #4CAF70`, color: "#4CAF70",
-              padding: "14px", borderRadius: 8, cursor: "pointer",
-              fontSize: 14, fontFamily: "inherit", fontWeight: "bold", letterSpacing: 1
+          <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+            <button onClick={() => copyText(generateDiscord(), setCopiedDiscord)} style={{
+              background: copiedDiscord ? "#1a3a1a" : "#1a2e1e",
+              border: "1px solid #4CAF70", color: "#4CAF70",
+              padding: "12px 16px", borderRadius: 8, cursor: "pointer",
+              fontSize: 13, fontFamily: "inherit", fontWeight: "bold"
             }}>
-              {copied ? "✓ COPIADO!" : "📋 COPIAR PARA O DISCORD"}
+              {copiedDiscord ? "✓ Copiado!" : "📋 Copiar Discord"}
             </button>
+          </div>
+
+          <div style={{ color: "#2196F3", fontSize: 11, letterSpacing: 1, marginBottom: 6 }}>JSON PARA O FOUNDRY</div>
+          <textarea readOnly value={generateJson()} style={{
+            width: "100%", minHeight: 180, maxHeight: 260, background: "#060c08", border: "1px solid #1a2e1e",
+            borderRadius: 8, padding: 16, color: "#8aaa84", fontFamily: "'Courier New', monospace",
+            fontSize: 12, lineHeight: 1.6, resize: "vertical", outline: "none", marginBottom: 10
+          }} />
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <button onClick={() => copyText(generateJson(), setCopiedJson)} style={{
+              background: copiedJson ? "#10243a" : "#1a2e1e",
+              border: "1px solid #2196F3", color: "#2196F3",
+              padding: "12px 16px", borderRadius: 8, cursor: "pointer",
+              fontSize: 13, fontFamily: "inherit", fontWeight: "bold"
+            }}>
+              {copiedJson ? "✓ Copiado!" : "📥 Copiar JSON (Foundry)"}
+            </button>
+            <button onClick={downloadJson} style={{
+              background: "transparent", border: "1px solid #1a2e1e", color: "#4a6a50",
+              padding: "12px 16px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "inherit"
+            }}>💾 Baixar .json</button>
             <button onClick={() => setStep(0)} style={{
               background: "transparent", border: "1px solid #1a2e1e", color: "#4a6a50",
-              padding: "14px 20px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontFamily: "inherit"
+              padding: "12px 16px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "inherit"
             }}>← Editar</button>
-          </div>
-          <div style={{ marginTop: 10, fontSize: 10, color: "#1a2e1e", textAlign: "center" }}>
-            Cole no Discord. A formatação é aplicada automaticamente.
           </div>
         </>}
 
